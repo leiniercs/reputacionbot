@@ -1,0 +1,30 @@
+{
+	"name": "reputacionbot",
+	"version": "0.1.0",
+	"description": "Administrador del Bot de Telegram 'Reputacion'",
+	"scripts": {
+		"start": "NODE_ENV=production node src/bot.js"
+	},
+	"author": {
+		"name": "Leinier Cruz Salfran",
+		"mail": "leiniercs@gmail.com"
+	},
+	"license": "NOLICENSE",
+	"private": true,
+	"devDependencies": {
+		"@types/node-fetch": "latest",
+		"@types/pg": "latest"
+	},
+	"dependencies": {
+		"telegraf": "latest",
+		"telegraf-session-postgresql": "latest",
+		"telegram-passport": "latest",
+		"node-fetch": "latest",
+		"pg": "latest",
+		"uuid": "latest",
+		"express": "latest",
+		"helmet": "latest",
+		"cors": "latest",
+		"body-parser": "latest"
+	}
+}

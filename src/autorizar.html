@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8">
+		<title>ReputacionBot :: Conoce Tu Cliente</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="author" content="ReputacionBot">
+		<meta name="type" content="website">
+		<meta name="description" content="Autorización de acceso y uso de los datos personales del usuario del Bot de la Reputación">
+		<meta property="og:type" content="website"/>
+		<meta property="og:locale" content="es"/>
+		<meta property="og:site_name" content="ReputacionBot"/>
+		<meta property="og:title" content="Conoce Tu Cliente">
+		<meta property="og:image" content="Autorización de acceso y uso de los datos personales del usuario del Bot de la Reputación">
+		<meta property="og:description" content="">
+		<link rel="icon" type="image/png" href="/reputacionbot.png">
+		<link rel="shortcut icon" type="image/png" href="/reputacionbot.png">
+		<script src="/TGPassportJsSDK/telegram-passport.js"></script>
+		<style>
+			p,
+			li,
+			button {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+				font-size: large;
+			}
+
+			li {
+				line-height: 1.5em;
+			}
+
+			.telegram-passport-wrap {
+				text-align: center;
+				padding: 2em;
+			}
+		</style>
+	</head>
+	<body>
+		<p>El proceso <b>Conoce Tu Cliente</b> es lo más importante en el sistema de reputación ya que establece las bases para identificarlo como una persona verificada y aumentar, así, su nivel de reputación y confiabilidad. En él, usted otorgará, explícitamente, autorización para acceder a sus datos para poder verificarlo.</p>
+
+		<p>En este proceso se le requerirán:
+			<ul>
+				<li>Fotos del frente y reverso de su tarjeta de identidad.</li>
+				<li>Selfie mostrando completamente su rostro, frente de su tarjeta de identidad y un papel en blanco en donde esté escrito la fecha actual y la frase "Verificación Bot Reputación".</li>
+				<li>Datos personales.</li>
+				<li>Dirección postal.</li>
+				<li>Número telefónico.</li>
+				<li>Correo electrónico.</li>
+			</ul>
+		</p>
+	  
+		<p>Debe suministrar datos reales y fotografías enfocadas, con buena definición y a color. A continuación se muestran algunos consejos a seguir para ofrecer datos que puedan conllevar a la aprobación de su solicitud de verificación de identidad:
+			<ul>
+				<li>La fotografía del frente y reverso de la tarjeta de identidad deben ser a color, nitidas, enfocadas, que el documento ocupe mas del 90% de la fotografía y se vean los bordes del mismo.</li>
+				<li>La fotografía del selfie debe mostrar completamente su rostro, frente de su tarjeta de identidad y un papel en blanco en donde esté escrito la fecha actual y la frase "Verificación Bot Reputación".</li>
+				<li>Los datos personales suministrados deben coincidir los datos de la tarjeta de identidad.</li>
+			</ul>
+		</p>
+
+		<div class="telegram-passport-wrap">
+			<div id="telegram_passport_login_btn" class="telegram-passport-login-wrap"></div>
+		</div>
+		<script>
+			Telegram.Passport.createAuthButton('telegram_passport_login_btn', {
+				bot_id: 1342202179,
+				scope: {
+					data: [
+						{
+							type: 'identity_card',
+							selfie: true
+						},
+						'personal_details',
+						'address',
+						'phone_number',
+						'email'
+					],
+					v: 1
+				},
+				public_key: `-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwKU8WPRi4JD/Kt6keGE2\nuq8sEDEXNJutAJQKsGQkXpEzs74pXClRDX82mQnLF1wOYExd00CLWnW5GVC3XQ6P\nyFrXnw8GuvgR4a2TUHBghcMRGB2pgmaPFJ5vLDcF/oDlUIY3SZpZTFt3s/Zfz05T\nJx0E+0FIZVtdYOurTody2PsSjQXpc51/vg6GNsJiSMYzp7q34R7k6r0Ovs5mQFAu\nIVGJQC7jjjWnNGZZAwcBgj1Qs5Q4AO2mZ5UsPWeM4W4YSyd7BrbQkEFAcIkdQWwq\nv8xe4Cx7NpM9nFjLaDkjWKtma3i6XtANQYPt+kyVLEB/U+q6X5H482rTQ2+Ps/dr\nfwIDAQAB\n-----END PUBLIC KEY-----`,
+				nonce: 'disdj92nj983je9823d982mjdmssmd9823ms892jd9823smdd9hs239sdm2389sd2389mdm'
+			}, {
+				text: 'Autorizar acceso',
+				radius: 6,
+				tooltip_text: 'Instale <u>Telegram</u> para usar esta opción'
+			});
+		</script>
+	</body>
+</html>

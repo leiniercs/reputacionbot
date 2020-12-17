@@ -1,0 +1,39 @@
+Documentación del servidor API REST del Bot de la Reputación
+============================================================
+
+Versión: 0.2
+Fecha de actualización: 03-Nov-2020, 1:36pm
+URL base: https://reputacionbot.ccari.net
+
+
+Términos comúnes
+================
+
+Toda función expuesta a través de este servidor de API devuelve una variable nombrada '_exito' de tipo 'boolean' que determina si la función invocada ha terminado o no con éxito. En caso de ocurrir algún error entonces se devuelve otra variable nombrada 'codigo' en donde se almacena el ID del error. Ejemplo de lo previsto:
+
+Éxito:
+{
+	_exito: true,	/* Ejecución exitosa */
+	... 			/* Demás variables que devuelve la función */
+}
+
+Fallo:
+{
+	_exito: false,	/* Falló la ejecución de la función */
+	codigo: 1		/* Solicitud mal formada */
+}
+
+
+
+Funciones
+=========
+
+Función: obtenerInformacionUsuario
+Descripción: Obtiene información de carácter público de un usuario
+Ruta de acceso: /api/usuario/[idUsuario]
+Método: GET
+Autentificación: No
+Respuesta:
+{
+	verificado: boolean		/* Determina si el usuario está o no verificado */
+}
