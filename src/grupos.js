@@ -90,7 +90,7 @@ Usted ha añadido al <b>Bot de la Reputación</b> al grupo <b>'${grupo}'</b> per
 	}
 
 	for (nuevoMiembro of contexto.update.message.new_chat_members) {
-		monitorizacion.monitorizar(contexto, nuevoMiembro)
+		monitorizacion.monitorizar(contexto, nuevoMiembro, contexto.update.message.chat.id)
 			.then(() => {})
 			.catch(() => {})
 		;
