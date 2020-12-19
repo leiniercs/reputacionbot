@@ -99,7 +99,7 @@ CREATE TABLE monitorizacion_usuarios_grupos (
 	usuario BIGINT NOT NULL,
 	grupo BIGINT NOT NULL
 );
-GRANT SELECT, INSERT, UPDATE, DELETE ON monitorizacion_usuarios TO reputacionbot;
+GRANT SELECT, INSERT, UPDATE, DELETE ON monitorizacion_usuarios_grupos TO reputacionbot;
 CREATE INDEX ind_monitorizacion_usuarios_grupos_usuario ON monitorizacion_usuarios_grupos (usuario);
 CREATE INDEX ind_monitorizacion_usuarios_grupos_grupo ON monitorizacion_usuarios_grupos (grupo);
 
