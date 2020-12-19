@@ -123,6 +123,7 @@ for (let comando of comandos) {
 bot.on('passport_data', ctc.procesarInformacionPasaporteTelegram);
 bot.on('callback_query', procesarRetroalimentacion);
 bot.on('new_chat_members', grupos.procesarNuevoMiembro);
+bot.on('left_chat_member', grupos.procesarPartidaMiembro);
 bot.on('message', grupos.procesarNuevoMensaje);
 
 api.iniciar();

@@ -368,9 +368,24 @@ INSERT INTO monitorizacion_usuarios_grupos (
 	;
 }
 
+function eliminarGrupoUsuario(usuario, grupo) {
+	const instruccionSQL = `
+DELETE FROM monitorizacion_usuarios_grupos
+WHERE (
+	usuario = $1 AND
+	grupo = $2
+)
+	`;
+	baseDatos.query(instruccionSQL, [ usuario, grupo ])
+		.then(() => {})
+		.catch(() => {})
+	;
+}
+
 module.exports = {
 	comando,
 	descripcion,
 	accion,
-	monitorizar
+	monitorizar,
+	eliminarGrupoUsuario
 };

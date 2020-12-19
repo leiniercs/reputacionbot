@@ -100,6 +100,18 @@ Usted ha añadido al <b>Bot de la Reputación</b> al grupo <b>'${grupo}'</b> per
 }
 
 /**
+ * Procesa el evento de la partida de un miembro en un grupo
+ * @param {Telegraf} contexto Referencia al objeto de la sesion
+ */
+async function procesarPartidaMiembro (contexto) {
+	monitorizacion.monitorizar(contexto, contexto.update.message.left_chat_member)
+		.then(() => {})
+		.catch(() => {})
+	;
+	monitorizacion.eliminarGrupoUsuario(contexto.update.message.left_chat_member.id, contexto.update.message.chat.id);
+}
+
+/**
  * Procesa el evento de un nuevo mensaje en un grupo
  * @param {Telegraf} contexto Referencia al objeto de la sesion
  */
@@ -637,5 +649,6 @@ module.exports = {
 	accion,
 	configurar,
 	procesarNuevoMiembro,
+	procesarPartidaMiembro,
 	procesarNuevoMensaje
 };
