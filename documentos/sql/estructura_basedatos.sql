@@ -93,6 +93,15 @@ CREATE TABLE monitorizacion_usuarios (
 	tiempo TIMESTAMPTZ DEFAULT NOW()
 );
 GRANT SELECT, INSERT, UPDATE, DELETE ON monitorizacion_usuarios TO reputacionbot;
+CREATE INDEX ind_monitorizacion_usuarios_id ON monitorizacion_usuarios (id);
+
+CREATE TABLE monitorizacion_usuarios_grupos (
+	usuario BIGINT NOT NULL,
+	grupo BIGINT NOT NULL
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON monitorizacion_usuarios TO reputacionbot;
+CREATE INDEX ind_monitorizacion_usuarios_grupos_usuario ON monitorizacion_usuarios_grupos (usuario);
+CREATE INDEX ind_monitorizacion_usuarios_grupos_grupo ON monitorizacion_usuarios_grupos (grupo);
 
 CREATE TABLE monitorizacion_nombres (
 	id BIGINT NOT NULL,
@@ -101,5 +110,6 @@ CREATE TABLE monitorizacion_nombres (
 	tiempo TIMESTAMPTZ DEFAULT NOW()
 );
 GRANT SELECT, INSERT, UPDATE, DELETE ON monitorizacion_nombres TO reputacionbot;
+CREATE INDEX ind_monitorizacion_nombres_id ON monitorizacion_nombres (id);
 
 COMMIT;

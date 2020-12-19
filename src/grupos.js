@@ -123,18 +123,18 @@ async function procesarNuevoMensaje (contexto) {
 		}
 	}
 
-	monitorizacion.monitorizar(contexto, contexto.update.message.from)
+	monitorizacion.monitorizar(contexto, contexto.update.message.from, contexto.update.message.chat.id)
 		.then(() => {})
 		.catch(() => {})
 	;
 	if (contexto.update.message.forward_from !== undefined) {
-		monitorizacion.monitorizar(contexto, contexto.update.message.forward_from)
+		monitorizacion.monitorizar(contexto, contexto.update.message.forward_from, undefined)
 			.then(() => {})
 			.catch(() => {})
 		;
 	}
 	if (contexto.update.message.reply_to_message !== undefined) {
-		monitorizacion.monitorizar(contexto, contexto.update.message.reply_to_message.from)
+		monitorizacion.monitorizar(contexto, contexto.update.message.reply_to_message.from, contexto.update.message.chat.id)
 			.then(() => {})
 			.catch(() => {})
 		;

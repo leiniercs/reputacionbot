@@ -207,8 +207,9 @@ Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resu
  * Registra/actualiza la información de un usuario
  * @param {Telegraf} contexto Referencia al objeto de la sesion
  * @param {Object} usuario Referencia al objeto del usuario
+ * @param {number} idChat ID del chat
  */
-async function monitorizar (contexto, usuario) {
+async function monitorizar (contexto, usuario, idChat) {
 	let instruccionSQL = '';
 	let resultados = {};
 	let cambios = '';
@@ -274,6 +275,23 @@ Actual: ${(usuario.last_name.length > 0 ? `${usuario.last_name}` : '[No definido
 			registrarNombres(usuario);
 		}
 
+		if (idChat !== undefined) {
+			instruccionSQL = `
+SELECT
+	usuario::integer
+FROM monitorizacion_usuarios_grupos
+WHERE (
+	usuario = $1 AND
+	grupo = $2
+)
+LIMIT 1
+			`;
+			resultados = await baseDatos.query(instruccionSQL, [ usuario.id, idChat ]);
+			if (resultados.rowCount === 0) {
+				registrarGrupoUsuario(usuario.id, idChat);
+			}
+		}
+
 		if (cambios.length > 0) {
 			if (contexto.update.message.chat.id !== contexto.update.message.from.id) {
 				cambios = `<b>Notificación de cambio en la identidad</b>
@@ -317,6 +335,22 @@ INSERT INTO monitorizacion_nombres (
 )
 	`;
 	baseDatos.query(instruccionSQL, [ usuario.id, usuario.first_name, usuario.last_name ])
+		.then(() => {})
+		.catch(() => {})
+	;
+}
+
+function registrarGrupoUsuario(usuario, grupo) {
+	const instruccionSQL = `
+INSERT INTO monitorizacion_usuarios_grupos (
+	usuario,
+	grupo
+) VALUES (
+	$1,
+	$2
+)
+	`;
+	baseDatos.query(instruccionSQL, [ usuario, grupo ])
 		.then(() => {})
 		.catch(() => {})
 	;
