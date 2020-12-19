@@ -245,7 +245,7 @@ ORDER BY tiempo ASC
 		if (resultadosUsuarios.rowCount === 0 && resultadosNombres.rowCount === 0) {
 			mensaje = `<b>No se pudo obtener el informe del usuario</b>
 
-El usuario al que desea consultar la información no existe en la base de datos, por lo que no se pudo generar el informe. Intente consultar el informe otra vez utilizando el ID, para mayor probabilidad.`;
+El usuario al que desea consultar la información no existe en la base de datos, por lo que no se pudo generar el informe. Intente consultar el informe otra vez utilizando el ID, para mayor probabilidad de éxito.`;
 		} else {
 			mensaje = `<b>Información del usuario</b>
 
