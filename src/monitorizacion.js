@@ -106,7 +106,7 @@ Se ha detectado que usted tiene su identidad verificada y, aún así, ha cambiad
 			}
 			if (usuario.length > 0) {
 				if (usuario[0][0] === '@') {
-					usuario = usuario[0].subtring(1);
+					usuario = usuario[0].substring(1);
 				} else {
 					try {
 						usuario = parseInt(usuario[0]);
@@ -155,6 +155,7 @@ ORDER BY tiempo ASC
 					mensaje = `<b>Información del usuario</b>
 
 <a href="tg://user?id=${informacion.id}">Enlace al usuario</a>
+Visto por primera vez: Ahora
 ID: ${informacion.id}`;
 					if (informacion.username !== undefined) {
 						mensaje += `\nUsuario: @${informacion.username}`;
@@ -192,7 +193,80 @@ Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resu
 			}
 		}
 	}
+
 	if (typeof usuario === 'string') {
+		try {
+			instruccionSQL = `
+SELECT
+	id::bigint
+FROM monitorizacion_usuarios
+WHERE (
+	usuario = $1
+)
+LIMIT 1
+			`;
+			resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
+
+			if (resultadosUsuarios.rowCount > 0) {
+				usuario = resultadosUsuarios.rows[0].id;
+			} else {
+				usuario = 0;
+			}
+
+			instruccionSQL = `
+SELECT
+	id::bigint,
+	usuario::text,
+	tiempo::timestamptz
+FROM monitorizacion_usuarios
+WHERE (
+	id = $1
+)
+ORDER BY tiempo ASC
+			`;
+			resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
+
+			instruccionSQL = `
+SELECT
+	nombres::text,
+	apellidos::text,
+	tiempo::timestamptz
+FROM monitorizacion_nombres
+WHERE (
+	id = $1
+)
+ORDER BY tiempo ASC
+			`;
+			resultadosNombres = await baseDatos.query(instruccionSQL, [ usuario ]);
+		} catch (_e) {
+			return;
+		}
+		
+		if (resultadosUsuarios.rowCount === 0 && resultadosNombres.rowCount === 0) {
+			mensaje = `<b>No se pudo obtener el informe del usuario</b>
+
+El usuario al que desea consultar la información no existe en la base de datos, por lo que no se pudo generar el informe. Intente consultar el informe otra vez utilizando el ID, para mayor probabilidad.`;
+		} else {
+			mensaje = `<b>Información del usuario</b>
+
+<a href="tg://user?id=${usuario}">Enlace al usuario</a>
+Visto por primera vez: ${new Date(resultadosUsuarios.rows[0].tiempo).toLocaleString('es')}
+ID: ${usuario}
+Usuario: ${(resultadosUsuarios.rows[resultadosUsuarios.rowCount - 1].usuario.length > 0 ? `@${resultadosUsuarios.rows[resultadosUsuarios.rowCount - 1].usuario}` : '[No definido]')}
+Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resultadosNombres.rows[resultadosNombres.rowCount - 1].apellidos}
+
+<b>Historial de usuarios</b>
+`;
+			for (fila of resultadosUsuarios.rows) {
+				mensaje += `${new Date(fila.tiempo).toLocaleString('es')} - ${fila.usuario}\n`;
+			}
+			mensaje += `
+<b>Historial de nombres</b>
+`;
+			for (fila of resultadosNombres.rows) {
+				mensaje += `${new Date(fila.tiempo).toLocaleString('es')} - ${fila.nombres} ${fila.apellidos}\n`;
+			}
+		}
 	}
 
 	if (mensaje.length > 0) {
