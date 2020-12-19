@@ -104,7 +104,7 @@ Usted ha añadido al <b>Bot de la Reputación</b> al grupo <b>'${grupo}'</b> per
  * @param {Telegraf} contexto Referencia al objeto de la sesion
  */
 async function procesarPartidaMiembro (contexto) {
-	monitorizacion.monitorizar(contexto, contexto.update.message.left_chat_member)
+	monitorizacion.monitorizar(contexto, contexto.update.message.left_chat_member, undefined)
 		.then(() => {})
 		.catch(() => {})
 	;
