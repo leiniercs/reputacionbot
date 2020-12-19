@@ -213,6 +213,7 @@ async function monitorizar (contexto, usuario, idChat) {
 	let instruccionSQL = '';
 	let resultados = {};
 	let cambios = '';
+	let fila = {};
 
 	if (usuario.is_bot === true) {
 		return;
@@ -293,14 +294,25 @@ LIMIT 1
 		}
 
 		if (cambios.length > 0) {
-			if (contexto.update.message.chat.id !== contexto.update.message.from.id) {
-				cambios = `<b>Notificación de cambio en la identidad</b>
+			cambios = `<b>Notificación de cambio en la identidad</b>
 
 Se ha detectado un cambio en la identidad del usuario <a href="tg://user?id=${usuario.id}">${usuario.id}</a>.${cambios}`;
-				contexto.telegram.sendMessage(contexto.update.message.chat.id, cambios, { parse_mode: 'HTML' })
-					.then(() => {})
-					.catch(() => {})
-				;
+			instruccionSQL = `
+SELECT
+	grupo::integer
+FROM monitorizacion_usuarios_grupos
+WHERE (
+	usuario = $1
+)
+			`;
+			resultados = await baseDatos.query(instruccionSQL, [ usuario.id ]);
+			if (resultados.rowCount > 0) {
+				for (fila of resultados.rows) {
+					contexto.telegram.sendMessage(fila.grupo, cambios, { parse_mode: 'HTML' })
+						.then(() => {})
+						.catch(() => {})
+					;
+				}
 			}
 		}
 	} catch (_e) {}
