@@ -299,7 +299,7 @@ LIMIT 1
 Se ha detectado un cambio en la identidad del usuario <a href="tg://user?id=${usuario.id}">${usuario.id}</a>.${cambios}`;
 			instruccionSQL = `
 SELECT
-	grupo::integer
+	grupo::bigint
 FROM monitorizacion_usuarios_grupos
 WHERE (
 	usuario = $1
