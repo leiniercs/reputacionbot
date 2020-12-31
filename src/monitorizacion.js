@@ -381,8 +381,9 @@ WHERE (
 			`;
 			resultados = await baseDatos.query(instruccionSQL, [ usuario.id ]);
 			for (i = 0; i < resultados.rowCount; i++) {
-				setInterval(() => {
-					contexto.telegram.sendMessage(resultados.rows[i].grupo, cambios, { parse_mode: 'HTML' })
+				const fila = resultados.rows[i];
+				setTimeout(() => {
+					contexto.telegram.sendMessage(fila.grupo, cambios, { parse_mode: 'HTML' })
 						.then(() => {})
 						.catch(() => {})
 					;
