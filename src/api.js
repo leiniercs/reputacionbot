@@ -30,7 +30,7 @@ async function obtenerInformacionUsuario (sol, res) {
 		if (sol.params.id !== undefined) {
 			idUsuario = parseInt(sol.params.id);
 		} else {
-			return res.status(400).json({ _e: false, c: Errores.SolicitudMalFormada });
+			return res.status(400).json({ _exito: false, codigo: Errores.SolicitudMalFormada });
 		}
 
 		instruccionSQL = `
@@ -89,4 +89,4 @@ function iniciar() {
 
 module.exports = {
 	iniciar
-}
+};

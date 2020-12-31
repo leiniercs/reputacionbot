@@ -287,7 +287,7 @@ async function monitorizar (contexto, usuario, idChat) {
 	let instruccionSQL = '';
 	let resultados = {};
 	let cambios = '';
-	let fila = {};
+	let i = 0;
 
 	if (usuario.is_bot === true) {
 		return;
@@ -380,13 +380,13 @@ WHERE (
 )
 			`;
 			resultados = await baseDatos.query(instruccionSQL, [ usuario.id ]);
-			if (resultados.rowCount > 0) {
-				for (fila of resultados.rows) {
-					contexto.telegram.sendMessage(fila.grupo, cambios, { parse_mode: 'HTML' })
+			for (i = 0; i < resultados.rowCount; i++) {
+				setInterval(() => {
+					contexto.telegram.sendMessage(resultados.rows[i].grupo, cambios, { parse_mode: 'HTML' })
 						.then(() => {})
 						.catch(() => {})
 					;
-				}
+				}, i * 1000);
 			}
 		}
 	} catch (_e) {}
