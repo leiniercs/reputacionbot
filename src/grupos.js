@@ -3,6 +3,7 @@ const comun = require('./comun');
 const { baseDatos } = require('./basedatos');
 const notificaciones = require('./notificaciones');
 const monitorizacion = require('./monitorizacion');
+const listaNegra = require('./listanegra');
 // Produccion: 1342202179
 // Desarrollo: 1250980023
 const idBot = 1342202179;
@@ -16,13 +17,14 @@ const descripcion = `Configura el comportamiento del bot en el grupo.
     Activa/Desactiva el mensaje de bienvenida a los nuevos usuarios.
   - /configurar duracion &lt;segundos&gt;
     Especifica la duración, en segundos, de los mensajes a mostrar. Predeterminado: 30
+  - /configurar listanegra v|f
+    Activa/Desactiva el procesamiento de la Lista Negra en el grupo.
   - /configurar estricto v|f
     Activa/Desactiva el modo estricto, en donde se permitira/prohibirán determinadas acciones si el usuario no está verificado.
   - /configurar estricto uniones v|f
     Permite/Prohibe la unión de un nuevo usuario al grupo si no está verificado.
   - /configurar estricto mensajes v|f
-    Permite/Prohibe el envío de mensajes de un nuevo usuario al grupo si no está verificado.
-`;
+    Permite/Prohibe el envío de mensajes de un nuevo usuario al grupo si no está verificado.`;
 
 /**
  * Procesa el evento de un nuevo miembro en un grupo
@@ -38,6 +40,7 @@ async function accion (contexto) {
  */
 async function procesarNuevoMiembro (contexto) {
 	let nuevoMiembro = {};
+	let configuracion = {};
 
 	if (contexto.update.message.new_chat_member.is_bot === true && contexto.update.message.new_chat_member.id === idBot) {
 		registrarGrupo(contexto)
@@ -89,9 +92,25 @@ Usted ha añadido al <b>Bot de la Reputación</b> al grupo <b>'${grupo}'</b> per
 		return;
 	}
 
+	try {
+		await leerConfiguracion(contexto.update.message.chat.id);
+		if (grupos.has(contexto.update.message.chat.id) === true) {
+			configuracion = grupos.get(contexto.update.message.chat.id);
+		}
+	} catch (_e) {
+		configuracion = { listaNegra: false };
+	}
+
 	for (nuevoMiembro of contexto.update.message.new_chat_members) {
 		monitorizacion.monitorizar(contexto, nuevoMiembro, contexto.update.message.chat.id)
-			.then(() => {})
+			.then(() => {
+				if (configuracion.listaNegra === true) {
+					listaNegra.listaNegraProcesar(contexto, { usuario: nuevoMiembro, chat: contexto.update.message.chat.id})
+						.then(() => {})
+						.catch(() => {})
+					;
+				}
+			})
 			.catch(() => {})
 		;
 	}
@@ -135,27 +154,48 @@ async function procesarNuevoMensaje (contexto) {
 		}
 	}
 
-	monitorizacion.monitorizar(contexto, contexto.update.message.from, contexto.update.message.chat.id)
-		.then(() => {})
-		.catch(() => {})
-	;
-	if (contexto.update.message.forward_from !== undefined) {
-		monitorizacion.monitorizar(contexto, contexto.update.message.forward_from, undefined)
-			.then(() => {})
-			.catch(() => {})
-		;
-	}
-	if (contexto.update.message.reply_to_message !== undefined) {
-		monitorizacion.monitorizar(contexto, contexto.update.message.reply_to_message.from, contexto.update.message.chat.id)
-			.then(() => {})
-			.catch(() => {})
-		;
-	}
-	
 	leerConfiguracion(contexto.update.message.chat.id)
 		.then(() => {
 			if (grupos.has(contexto.update.message.chat.id) === true) {
 				configuracion = grupos.get(contexto.update.message.chat.id);
+
+				monitorizacion.monitorizar(contexto, contexto.update.message.from, contexto.update.message.chat.id)
+					.then(() => {
+						if (configuracion.listaNegra === true) {
+							listaNegra.listaNegraProcesar(contexto, { usuario: contexto.update.message.from, chat: contexto.update.message.chat.id})
+								.then(() => {})
+								.catch(() => {})
+							;
+						}
+					})
+					.catch(() => {})
+				;
+				if (contexto.update.message.forward_from !== undefined) {
+					monitorizacion.monitorizar(contexto, contexto.update.message.forward_from, undefined)
+						.then(() => {
+							if (configuracion.listaNegra === true) {
+								listaNegra.listaNegraProcesar(contexto, { usuario: contexto.update.message.forward_from, chat: contexto.update.message.chat.id})
+									.then(() => {})
+									.catch(() => {})
+								;
+							}
+						})
+						.catch(() => {})
+					;
+				}
+				if (contexto.update.message.reply_to_message !== undefined) {
+					monitorizacion.monitorizar(contexto, contexto.update.message.reply_to_message.from, contexto.update.message.chat.id)
+						.then(() => {
+							if (configuracion.listaNegra === true) {
+								listaNegra.listaNegraProcesar(contexto, { usuario: contexto.update.message.reply_to_message.from, chat: contexto.update.message.chat.id})
+									.then(() => {})
+									.catch(() => {})
+								;
+							}
+						})
+						.catch(() => {})
+					;
+				}
 
 				if (configuracion.modoEstricto.activado === true) {
 					if (configuracion.modoEstricto.mensajes === false) {
@@ -232,18 +272,23 @@ async function registrarGrupo (contexto) {
 						activado: false,
 						uniones: false,
 						mensajes: false
-					}
+					},
+					listaNegra: false,
+					privado: (contexto.update.message.chat.type === 'private')
 				});
 
 				instruccionSQL = `
 INSERT INTO grupos (
-	id
+	id,
+	privado
 ) VALUES (
-	$1
+	$1,
+	$2
 )
 				`;
 				baseDatos.query(instruccionSQL, [
-						contexto.update.message.chat.id
+						contexto.update.message.chat.id,
+						(contexto.update.message.chat.type === 'private')
 					])
 					.then(() => {})
 					.catch(() => {})
@@ -272,7 +317,9 @@ SELECT
 	duracion_mensajes::integer,
 	modo_estricto::boolean,
 	modo_estricto_uniones::boolean,
-	modo_estricto_mensajes::boolean
+	modo_estricto_mensajes::boolean,
+	lista_negra::boolean,
+	privado::boolean
 FROM grupos 
 WHERE (
 	id = $1
@@ -291,7 +338,9 @@ WHERE (
 				activado: resultados.rows[0].modo_estricto,
 				uniones: resultados.rows[0].modo_estricto_uniones,
 				mensajes: resultados.rows[0].modo_estricto_mensajes
-			}
+			},
+			listaNegra: resultados.rows[0].lista_negra,
+			privado: resultados.rows[0].privado
 		});
 	}
 }
@@ -308,7 +357,9 @@ UPDATE grupos SET
 	duracion_mensajes = $3,
 	modo_estricto = $4,
 	modo_estricto_uniones = $5,
-	modo_estricto_mensajes = $6
+	modo_estricto_mensajes = $6,
+	lista_negra = $7,
+	privado = $8
 WHERE (
 	id = $1
 )
@@ -320,7 +371,9 @@ WHERE (
 			configuracion.duracionMensajes,
 			configuracion.modoEstricto.activado,
 			configuracion.modoEstricto.uniones,
-			configuracion.modoEstricto.mensajes
+			configuracion.modoEstricto.mensajes,
+			configuracion.listaNegra,
+			configuracion.privado
 		])
 		.then(() => {})
 		.catch(() => {})
@@ -368,6 +421,22 @@ async function configurar (contexto) {
 									if (comando.length === 0) { return; }
 									configuracion.duracionMensajes = parseInt(comando);
 									mensaje = `Se ha establecido la duración de los mensaje a ${configuracion.duracionMensajes} segundos.`;
+									break;
+								case 'listanegra':
+									comando.shift();
+									if (comando.length === 0) { return; }
+									switch (comando[0].toLowerCase()) {
+										case '0':
+										case 'f':
+											configuracion.listaNegra = false;
+											mensaje = 'Se ha desactivado el procesamiento de la Lista Negra.';
+											break;
+										case '1':
+										case 'v':
+											configuracion.listaNegra = true;
+											mensaje = 'Se ha activado el procesamiento de la Lista Negra.';
+											break;
+									}
 									break;
 								case 'estricto':
 									comando.shift();

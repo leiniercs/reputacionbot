@@ -6,8 +6,8 @@ const notificaciones = require('./notificaciones');
 const comando = 'informacion';
 const descripcion = `Muestra información de un usuario.
 <b>Variantes de uso:</b>
-  1- /informacion @usuario
-  2- /informacion id
+  1- /informacion id_usuario
+  2- /informacion @usuario
   3- Responder a un mensaje del usuario al que se desea ver información con el texto:
     /informacion`;
 
@@ -175,7 +175,7 @@ ID: ${informacion.id}`;
 			mensaje = `<b>Información del usuario</b>
 
 <a href="tg://user?id=${usuario}">Enlace al usuario</a>
-Visto por primera vez: ${new Date(resultadosUsuarios.rows[0].tiempo).toLocaleString('es')}
+Visto por primera vez: ${new Date(resultadosUsuarios.rows[0].tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
 ID: ${usuario}
 Usuario: ${(resultadosUsuarios.rows[resultadosUsuarios.rowCount - 1].usuario.length > 0 ? `@${resultadosUsuarios.rows[resultadosUsuarios.rowCount - 1].usuario}` : '[No definido]')}
 Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resultadosNombres.rows[resultadosNombres.rowCount - 1].apellidos}
@@ -183,13 +183,13 @@ Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resu
 <b>Historial de usuarios</b>
 `;
 			for (fila of resultadosUsuarios.rows) {
-				mensaje += `${new Date(fila.tiempo).toLocaleString('es')} - ${fila.usuario}\n`;
+				mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.usuario}\n`;
 			}
 			mensaje += `
 <b>Historial de nombres</b>
 `;
 			for (fila of resultadosNombres.rows) {
-				mensaje += `${new Date(fila.tiempo).toLocaleString('es')} - ${fila.nombres} ${fila.apellidos}\n`;
+				mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.nombres} ${fila.apellidos}\n`;
 			}
 		}
 	}
@@ -250,7 +250,7 @@ El usuario al que desea consultar la información no existe en la base de datos,
 			mensaje = `<b>Información del usuario</b>
 
 <a href="tg://user?id=${usuario}">Enlace al usuario</a>
-Visto por primera vez: ${new Date(resultadosUsuarios.rows[0].tiempo).toLocaleString('es')}
+Visto por primera vez: ${new Date(resultadosUsuarios.rows[0].tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
 ID: ${usuario}
 Usuario: ${(resultadosUsuarios.rows[resultadosUsuarios.rowCount - 1].usuario.length > 0 ? `@${resultadosUsuarios.rows[resultadosUsuarios.rowCount - 1].usuario}` : '[No definido]')}
 Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resultadosNombres.rows[resultadosNombres.rowCount - 1].apellidos}
@@ -258,13 +258,13 @@ Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resu
 <b>Historial de usuarios</b>
 `;
 			for (fila of resultadosUsuarios.rows) {
-				mensaje += `${new Date(fila.tiempo).toLocaleString('es')} - ${fila.usuario}\n`;
+				mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.usuario}\n`;
 			}
 			mensaje += `
 <b>Historial de nombres</b>
 `;
 			for (fila of resultadosNombres.rows) {
-				mensaje += `${new Date(fila.tiempo).toLocaleString('es')} - ${fila.nombres} ${fila.apellidos}\n`;
+				mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.nombres} ${fila.apellidos}\n`;
 			}
 		}
 	}

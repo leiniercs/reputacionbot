@@ -82,6 +82,8 @@ CREATE TABLE grupos (
 	modo_estricto BOOLEAN DEFAULT false,
 	modo_estricto_uniones BOOLEAN DEFAULT false,
 	modo_estricto_mensajes BOOLEAN DEFAULT false,
+	lista_negra BOOLEAN DEFAULT false,
+	privado BOOLEAN DEFAULT false,
 	tiempo_union TIMESTAMPTZ DEFAULT NOW(),
 	CONSTRAINT pkey_grupos_id PRIMARY KEY (id)
 );
@@ -111,5 +113,24 @@ CREATE TABLE monitorizacion_nombres (
 );
 GRANT SELECT, INSERT, UPDATE, DELETE ON monitorizacion_nombres TO reputacionbot;
 CREATE INDEX ind_monitorizacion_nombres_id ON monitorizacion_nombres (id);
+
+CREATE TABLE listanegra_administradores (
+	id BIGINT NOT NULL,
+	id_promotor BIGINT NOT NULL,
+	tiempo TIMESTAMPTZ DEFAULT NOW(),
+	CONSTRAINT pkey_listanegra_administradores_id PRIMARY KEY (id)
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON listanegra_administradores TO reputacionbot;
+CREATE INDEX ind_listanegra_administradores_id_promotor ON listanegra_administradores (id_promotor);
+
+CREATE TABLE listanegra (
+	id BIGINT NOT NULL,
+	id_administrador BIGINT NOT NULL,
+	motivos VARCHAR(2048) NOT NULL,
+	tiempo TIMESTAMPTZ DEFAULT NOW(),
+	CONSTRAINT pkey_listanegra_id PRIMARY KEY (id)
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON listanegra TO reputacionbot;
+CREATE INDEX ind_listanegra_id_administrador ON listanegra (id_administrador);
 
 COMMIT;

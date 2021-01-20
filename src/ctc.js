@@ -216,8 +216,8 @@ Si posee dudas, puede consultar su duda con los especialistas en el Grupo de Sop
 	instruccionSQL = `
 INSERT INTO identidades (
     usuario_id,
-	usuario_nombre,
 	usuario_usuario,
+	usuario_nombre,
 	telefono,
 	correo,
 	datos_personales_primer_nombre,

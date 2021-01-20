@@ -1,3 +1,4 @@
+// MTProto API: 149.154.167.50:443 / 2426526 / ab46594b9caf8d1f10ac93f349788a86
 // Produccion: 1342202179:AAHUaRsyypamrLOojbz7w3m3TjY7gdjpD1g
 // Desarrollo: 1250980023:AAEQdEYzdC2VEVeff6GWwCDieFm6YzK2CoU
 const botToken = '1342202179:AAHUaRsyypamrLOojbz7w3m3TjY7gdjpD1g';
@@ -14,6 +15,7 @@ const evaluaciones = require('./evaluaciones');
 const informes = require('./informes');
 const grupos = require('./grupos');
 const monitorizacion = require('./monitorizacion');
+const listaNegra = require('./listanegra');
 const comandos = [
 	{
 		comando: 'ayuda',
@@ -59,6 +61,31 @@ const comandos = [
 		comando: grupos.comando,
 		descripcion: grupos.descripcion,
 		accion: grupos.accion
+	},
+	{
+		comando: listaNegra.comandos.administradores.comando,
+		descripcion: listaNegra.comandos.administradores.descripcion,
+		accion: listaNegra.accion
+	},
+	{
+		comando: listaNegra.comandos.admAgregar.comando,
+		descripcion: listaNegra.comandos.admAgregar.descripcion,
+		accion: listaNegra.accion
+	},
+	{
+		comando: listaNegra.comandos.admEliminar.comando,
+		descripcion: listaNegra.comandos.admEliminar.descripcion,
+		accion: listaNegra.accion
+	},
+	{
+		comando: listaNegra.comandos.agregar.comando,
+		descripcion: listaNegra.comandos.agregar.descripcion,
+		accion: listaNegra.accion
+	},
+	{
+		comando: listaNegra.comandos.eliminar.comando,
+		descripcion: listaNegra.comandos.eliminar.descripcion,
+		accion: listaNegra.accion
 	}
 ];
 
@@ -107,6 +134,20 @@ async function procesarRetroalimentacion (contexto) {
 				break;
 			case comun.Origenes.Identidad:
 				await ctc.aprobarRechazar(contexto);
+				break;
+			case comun.Origenes.ListaNegra:
+				switch (datos.accion) {
+					case 1:
+						if (contexto.update.callback_query.from.id === datos.u) {
+							await listaNegra.administracionOtorgar(contexto, datos);
+						} else {
+							contexto.answerCbQuery('ERROR! Usted no está autorizado a realizar esta operación.')
+								.then(() => {})
+								.catch(() => {})
+							;
+						}
+						break;
+				}
 				break;
 		}
 	} catch (_e) {}

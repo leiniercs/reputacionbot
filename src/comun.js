@@ -5,7 +5,8 @@ const { baseDatos } = require('./basedatos');
 const Origenes = {
 	TerminosYCondiciones: 0x01,
 	ConoceTuCliente: 0x02,
-	Identidad: 0x03
+	Identidad: 0x03,
+	ListaNegra: 0x04
 }
 
 
