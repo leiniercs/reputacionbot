@@ -33,6 +33,7 @@ async function mostrar (contexto) {
 	let resultadosNombres = {};
 	let fila = {};
 	let usuario;
+	let motivoExpulsion = '';
 	let mensaje = '';
 
 	if (contexto.message.from.is_bot === true) {
@@ -101,9 +102,11 @@ Se ha detectado que usted tiene su identidad verificada y, aún así, ha cambiad
 		usuario = contexto.update.message.text.split(' ');
 		usuario.shift();
 		if (usuario.length > 0) {
+			/*
 			if (usuario[0] === '@reputacionbot') {
 				usuario.shift();
 			}
+			*/
 			if (usuario.length > 0) {
 				if (usuario[0][0] === '@') {
 					usuario = usuario[0].substring(1);
@@ -120,6 +123,19 @@ Se ha detectado que usted tiene su identidad verificada y, aún así, ha cambiad
 
 	if (typeof usuario === 'number') {
 		try {
+			instruccionSQL = `
+SELECT
+	motivos::text
+FROM listanegra
+WHERE (
+	id = $1
+)
+			`;
+			resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
+			if (resultadosUsuarios.rowCount > 0) {
+				motivoExpulsion = resultadosUsuarios.rows[0].motivos;
+			}
+
 			instruccionSQL = `
 SELECT
 	usuario::text,
@@ -163,6 +179,11 @@ ID: ${informacion.id}`;
 					if (informacion.first_name.length > 0) {
 						mensaje += `\nNombre: ${informacion.first_name} ${(informacion.last_name !== undefined ? informacion.last_name : '')}`;
 					}
+					if (motivoExpulsion.length === 0) {
+						mensaje += `\nEste usuario no está en la Lista Negra.`;
+					} else {
+						mensaje += `\n<b>Motivos de la inclusión en la Lista Negra</b>:\n${motivoExpulsion}`;
+					}
 					contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, { parse_mode: 'HTML', reply_to_message_id: contexto.update.message.message_id })
 						.then(() => {})
 						.catch(() => {})
@@ -191,6 +212,11 @@ Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resu
 			for (fila of resultadosNombres.rows) {
 				mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.nombres} ${fila.apellidos}\n`;
 			}
+			if (motivoExpulsion.length === 0) {
+				mensaje += `\nEste usuario no está en la Lista Negra.`;
+			} else {
+				mensaje += `\n<b>Motivos de la inclusión en la Lista Negra</b>:\n${motivoExpulsion}`;
+			}
 		}
 	}
 
@@ -211,6 +237,19 @@ LIMIT 1
 				usuario = resultadosUsuarios.rows[0].id;
 			} else {
 				usuario = 0;
+			}
+
+			instruccionSQL = `
+SELECT
+	motivos::text
+FROM listanegra
+WHERE (
+	id = $1
+)
+			`;
+			resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
+			if (resultadosUsuarios.rowCount > 0) {
+				motivoExpulsion = resultadosUsuarios.rows[0].motivos;
 			}
 
 			instruccionSQL = `
@@ -265,6 +304,11 @@ Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resu
 `;
 			for (fila of resultadosNombres.rows) {
 				mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.nombres} ${fila.apellidos}\n`;
+			}
+			if (motivoExpulsion.length === 0) {
+				mensaje += `\nEste usuario no está en la Lista Negra.`;
+			} else {
+				mensaje += `\n<b>Motivos de la inclusión en la Lista Negra</b>:\n${motivoExpulsion}`;
 			}
 		}
 	}
