@@ -47,6 +47,12 @@ const comandos = {
   2- /lneliminar @usuario
   3- Responder a un mensaje del usuario al que va a eliminar de la lista negra con el texto:
      /lneliminar`
+	},
+    buscar: {
+        comando: 'lnbuscar',
+        descripcion: `Obtiene un listado de usuarios de la lista negra filtrados por criterios.
+<b>Variantes de uso:</b>
+  1- /lnbuscar criterios de busqueda`
     }
 };
 
@@ -67,6 +73,7 @@ async function procesar (contexto) {
 	let linea = {};
 	let usuario = 0;
 	let motivos = '';
+	let criterios = '';
 	let instruccionSQL = '';
 	let resultados = {};
 	let usuarioAutorizado = false;
@@ -91,6 +98,9 @@ async function procesar (contexto) {
 	if (contexto.update.message.text.startsWith(`/${comandos.eliminar.comando}`) === true) {
 		comando = 5;
 	}
+	if (contexto.update.message.text.startsWith(`/${comandos.buscar.comando}`) === true) {
+		comando = 6;
+	}
 
 	if (comando === 0) {
 		return;
@@ -112,56 +122,57 @@ WHERE (
 		return;
 	}
 
-	if (usuarioAutorizado === false) {
-		contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Lamentamos darle una mala noticia!</b>
+	if (comando < 6) {
+		if (usuarioAutorizado === false) {
+			contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Lamentamos darle una mala noticia!</b>
 
 Usted ha intentado ejecutar un comando en el módulo de la Lista Negra del <b>Bot de la Reputación</b> pero, lamentablemente, no posee privilegios administrativos, por lo que no está autorizado(a) a ejecutar esta acción.`, {
-				parse_mode: 'HTML',
-				reply_to_message_id: contexto.update.message.message_id
-			})
-			.then(() => {})
-			.catch(() => {})
-		;
-		
-		return;
-	}
-
-
-	if (contexto.update.message.reply_to_message !== undefined) {
-		if (contexto.update.message.reply_to_message.from.is_bot === true) {
+					parse_mode: 'HTML',
+					reply_to_message_id: contexto.update.message.message_id
+				})
+				.then(() => {})
+				.catch(() => {})
+			;
+			
 			return;
 		}
-	
-		usuario = contexto.update.message.reply_to_message.from.id;
 
-		linea = contexto.update.message.text.split(' ');
-		linea.shift();
-		if (linea.length > 0) {
-			motivos = linea.join(' ');
-		}
-	} else {
-		linea = contexto.update.message.text.split(' ');
-		linea.shift();
-		if (linea.length > 0) {
-			if (linea[0][0] === '@') {
-				usuario = linea[0].substring(1);
-			} else {
-				try {
-					usuario = parseInt(linea[0]);
-				} catch (_e) {
-					return;
-				}
+
+		if (contexto.update.message.reply_to_message !== undefined) {
+			if (contexto.update.message.reply_to_message.from.is_bot === true) {
+				return;
 			}
+		
+			usuario = contexto.update.message.reply_to_message.from.id;
+
+			linea = contexto.update.message.text.split(' ');
 			linea.shift();
 			if (linea.length > 0) {
 				motivos = linea.join(' ');
 			}
+		} else {
+			linea = contexto.update.message.text.split(' ');
+			linea.shift();
+			if (linea.length > 0) {
+				if (linea[0][0] === '@') {
+					usuario = linea[0].substring(1);
+				} else {
+					try {
+						usuario = parseInt(linea[0]);
+					} catch (_e) {
+						return;
+					}
+				}
+				linea.shift();
+				if (linea.length > 0) {
+					motivos = linea.join(' ');
+				}
+			}
 		}
-	}
 
-	if (typeof usuario === 'string') {
-		try {
-			instruccionSQL = `
+		if (typeof usuario === 'string') {
+			try {
+				instruccionSQL = `
 SELECT id::bigint
 FROM monitorizacion_usuarios
 WHERE (
@@ -169,32 +180,45 @@ WHERE (
 )
 ORDER BY tiempo DESC
 LIMIT 1
-			`;
-			resultados = await baseDatos.query(instruccionSQL, [ usuario ]);
-			if (resultados.rowCount > 0) {
-				usuario = parseInt(resultados.rows[0].id);
-			} else {
+				`;
+				resultados = await baseDatos.query(instruccionSQL, [ usuario ]);
+				if (resultados.rowCount > 0) {
+					usuario = parseInt(resultados.rows[0].id);
+				} else {
+					mensaje = `<b>Lamentamos darle una mala noticia!</b>
+
+El usuario @${usuario} no ha sido visto jamás por el <b>Bot de la Reputación</b>, por lo que no se puede ejecutar la acción solicitada. Intente ejecutar otra vez el comando utilizando el ID del usuario.`;
+				}
+			} catch (_e) {
 				mensaje = `<b>Lamentamos darle una mala noticia!</b>
 
 El usuario @${usuario} no ha sido visto jamás por el <b>Bot de la Reputación</b>, por lo que no se puede ejecutar la acción solicitada. Intente ejecutar otra vez el comando utilizando el ID del usuario.`;
 			}
-		} catch (_e) {
+		}
+	}
+
+	if (comando === 6) {
+		linea = contexto.update.message.text.split(' ');
+		linea.shift();
+		if (linea.length > 0) {
+			criterios = linea.join(' ');
+		} else {
 			mensaje = `<b>Lamentamos darle una mala noticia!</b>
 
-El usuario @${usuario} no ha sido visto jamás por el <b>Bot de la Reputación</b>, por lo que no se puede ejecutar la acción solicitada. Intente ejecutar otra vez el comando utilizando el ID del usuario.`;
+No se pudo ejecutar la acción solicitada debido a que no ha especificado los criterios de búsqueda.`;
 		}
+	}
 
-		if (mensaje.length > 0) {
-			contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, {
-					parse_mode: 'HTML',
-					reply_to_message_id: contexto.update.message.message_id
-				})
-				.then(() => {})
-				.catch(() => {})
-			;
+	if (mensaje.length > 0) {
+		contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, {
+				parse_mode: 'HTML',
+				reply_to_message_id: contexto.update.message.message_id
+			})
+			.then(() => {})
+			.catch(() => {})
+		;
 
-			return;
-		}
+		return;
 	}
 
 	switch (comando) {
@@ -208,6 +232,8 @@ El usuario @${usuario} no ha sido visto jamás por el <b>Bot de la Reputación</
 			return listaNegraAgregar(contexto, usuario, motivos);
 		case 5:
 			return listaNegraRevocar(contexto, usuario);
+		case 6:
+			return listaNegraBuscar(contexto, criterios);
 		default:
 			break;
 	}
@@ -773,6 +799,84 @@ async function listaNegraProcesar (contexto, datos) {
 			}
 		})
 		.catch(() => {})
+	;
+}
+
+/**
+ * Obtiene un listado de usuarios de la lista negra filtrados por criterios
+ * @param {Telegraf} contexto Referencia al objeto de la sesion
+ * @param {string} criterios Criterios de busqueda
+ */
+async function listaNegraBuscar (contexto, criterios) {
+	let filtros = '';
+	let instruccionSQL = '';
+
+	for (let criterio of criterios.split(' ')) {
+		filtros += `${criterio}%`;
+	}
+
+	instruccionSQL = `
+SELECT
+	listanegra.id::bigint AS id,
+	(SELECT monitorizacion_usuarios.usuario::text
+		FROM monitorizacion_usuarios
+		WHERE (monitorizacion_usuarios.id = listanegra.id)
+		ORDER BY monitorizacion_usuarios.tiempo DESC LIMIT 1) AS usuario,
+	(SELECT monitorizacion_nombres.nombres::text
+		FROM monitorizacion_nombres
+		WHERE (monitorizacion_nombres.id = listanegra.id)
+		ORDER BY monitorizacion_nombres.tiempo DESC LIMIT 1) AS nombres
+FROM listanegra
+WHERE (listanegra.motivos ILIKE '%${filtros}')
+	`;
+
+	baseDatos.query(instruccionSQL)
+		.then((resultados) => {
+			let fila = {};
+			let mensaje = `<b>Lista Negra - Resultados de la búsqueda</b>
+
+<b>Criterios:</b> ${criterios}
+<b>Resultados:</b>
+`;
+
+			try {
+				if (resultados.rowCount > 0) {
+					for (let i = 0; i < resultados.rowCount; i++) {
+						fila = resultados.rows[i];
+						mensaje += ` ${i + 1}- `;
+						if (fila.nombres !== null) {
+							if (fila.nombres.length > 0) {
+								mensaje += `${fila.nombres.trim()} - `;
+							}
+						}
+						if (fila.usuario !== null) {
+							if (fila.usuario.length > 0) {
+								if (fila.nombres !== null) {
+									if (fila.nombres.length > 0) {
+										mensaje += ` - `;
+									}
+								}
+								mensaje += `@${fila.usuario} - `;
+							}
+						}
+						mensaje += `<a href="tg://user?id=${fila.id}">${fila.id}</a>\n`;
+					}
+				} else {
+					mensaje = `<b>Lamentamos darle una mala noticia!</b>
+
+La búsqueda no arrojó ningún resultado con los criterios especificados.`;
+				}
+			} catch (_e) {}
+
+			contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, {
+					parse_mode: 'HTML',
+					reply_to_message_id: contexto.update.message.message_id
+				})
+				.then(() => {})
+				.catch(() => {})
+			;
+		})
+		.catch((_e) => {})
 	;
 }
 

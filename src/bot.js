@@ -86,6 +86,11 @@ const comandos = [
 		comando: listaNegra.comandos.eliminar.comando,
 		descripcion: listaNegra.comandos.eliminar.descripcion,
 		accion: listaNegra.accion
+	},
+	{
+		comando: listaNegra.comandos.buscar.comando,
+		descripcion: listaNegra.comandos.buscar.descripcion,
+		accion: listaNegra.accion
 	}
 ];
 
