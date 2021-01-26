@@ -176,12 +176,12 @@ LIMIT 1
 			} else {
 				mensaje = `<b>Lamentamos darle una mala noticia!</b>
 
-El usuario suministrado no ha sido visto jamás por el <b>Bot de la Reputación</b>, por lo que no se puede ejecutar la acción solicitada. Intente ejecutar otra vez el comando utilizando el ID del usuario.`;
+El usuario @${usuario} no ha sido visto jamás por el <b>Bot de la Reputación</b>, por lo que no se puede ejecutar la acción solicitada. Intente ejecutar otra vez el comando utilizando el ID del usuario.`;
 			}
 		} catch (_e) {
 			mensaje = `<b>Lamentamos darle una mala noticia!</b>
 
-El usuario suministrado no ha sido visto jamás por el <b>Bot de la Reputación</b>, por lo que no se puede ejecutar la acción solicitada. Intente ejecutar otra vez el comando utilizando el ID del usuario.`;
+El usuario @${usuario} no ha sido visto jamás por el <b>Bot de la Reputación</b>, por lo que no se puede ejecutar la acción solicitada. Intente ejecutar otra vez el comando utilizando el ID del usuario.`;
 		}
 
 		if (mensaje.length > 0) {
@@ -237,7 +237,7 @@ WHERE (
 		if (resultados.rowCount > 0) {
 			contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Lamentamos darle una mala noticia!</b>
 
-No se pudo finalizar la acción solicitada debido a que el usuario suministrado ya posee privilegios administrativos en la <b>Lista Negra</b> del <b>Bot de la Reputación</b>.`, {
+No se pudo finalizar la acción solicitada debido a que el <a href="tg://user?id=${usuario}">usuario suministrado</a> ya posee privilegios administrativos en la <b>Lista Negra</b> del <b>Bot de la Reputación</b>.`, {
 					parse_mode: 'HTML',
 					reply_to_message_id: contexto.update.message.message_id
 				})
@@ -260,7 +260,7 @@ WHERE (
 		if (resultados.rowCount === 0) {
 			contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Lamentamos darle una mala noticia!</b>
 
-No se pudo otorgar privilegios administrativos en la <b>Lista Negra</b> al usuario suministrado debido a que este no posee su identidad verificada en el <b>Bot de la Reputación</b>.`, {
+No se pudo otorgar privilegios administrativos en la <b>Lista Negra</b> al <a href="tg://user?id=${usuario}">usuario suministrado</a> debido a que este no posee su identidad verificada en el <b>Bot de la Reputación</b>.`, {
 					parse_mode: 'HTML',
 					reply_to_message_id: contexto.update.message.message_id
 				})
@@ -405,7 +405,7 @@ LIMIT 1
 		} else {
 			contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Lamentamos darle una mala noticia!</b>
 
-No se pudo ejecutar la acción solicitada debido a que dicho usuario no posee su identidad verificada en el <b>Bot de la Reputación</b>.`, {
+No se pudo ejecutar la acción solicitada debido a que dicho <a href="tg://user?id=${usuario}">usuario</a> no posee la identidad verificada en el <b>Bot de la Reputación</b>.`, {
 					parse_mode: 'HTML',
 					reply_to_message_id: contexto.update.message.message_id
 				})
@@ -562,7 +562,7 @@ WHERE (listanegra.id = $1)
 				if (motivos.trim() === resultados.rows[0].motivos.trim()) {
 					mensaje = `<b>Lamentamos darle una mala noticia</b>
 
-No se pudo agregar ni actualizar el usuario suministrado a la <b>Lista Negra</b> debido a que ya existe una entrada para dicho usuario con el mismo motivo.`;
+No se pudo agregar ni actualizar el <a href="tg://user?id=${usuario}">usuario suministrado</a> a la <b>Lista Negra</b> debido a que ya existe una entrada para dicho usuario con el mismo motivo.`;
 				} else {
 					idAdministrador = resultados.rows[0].id_administrador;
 					nombresAdministrador = `${resultados.rows[0].primer_nombre} ${resultados.rows[0].segundo_nombre}`;
@@ -648,7 +648,7 @@ ${motivos}`;
 		} else {
 			mensaje = `<b>Lamentamos darle una mala noticia</b>
 
-No se pudo revocar al usuario suministrado debido a que no existe ninguna entrada para dicho usuario en la <b>Lista Negra</b> del <b>Bot de la Reputación</b>.`;
+No se pudo revocar al <a href="tg://user?id=${usuario}">usuario suministrado</a> debido a que no existe ninguna entrada para dicho usuario en la <b>Lista Negra</b> del <b>Bot de la Reputación</b>.`;
 		}
 
 		contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, {
@@ -669,7 +669,7 @@ No se pudo revocar al usuario suministrado debido a que no existe ninguna entrad
 function listaNegraExpulsar (contexto, datos) {
 	let mensaje = `<b>Detección de usuario de la Lista Negra</b>
 
-El usuario <a href="tg://user?id=${datos.usuario.id}">${datos.usuario.first_name.trim()}${(datos.usuario.username.length > 0 ? ` (@${datos.usuario.username})` : '')}</a> existe en la base de datos de la <b>Lista Negra</b>, por lo que será expulsado de este grupo de forma inmediata.
+El usuario <a href="tg://user?id=${datos.usuario.id}">${datos.usuario.first_name.trim()}${(datos.usuario.username.length > 0 ? ` (@${datos.usuario.username})` : `(${datos.usuario.id})`)}</a> existe en la base de datos de la <b>Lista Negra</b>, por lo que será expulsado de este grupo de forma inmediata.
 
 <b>Motivos:</b>
 ${datos.motivos}`;
