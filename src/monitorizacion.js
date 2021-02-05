@@ -7,9 +7,10 @@ const notificaciones = require('./notificaciones');
 const comando = 'informacion';
 const descripcion = `Muestra información de un usuario.
 <b>Variantes de uso:</b>
-  1- /informacion id_usuario
-  2- /informacion @usuario
-  3- Responder a un mensaje del usuario al que se desea ver información con el texto:
+  1- /informacion
+  2- /informacion id_usuario
+  3- /informacion @usuario
+  4- Responder a un mensaje del usuario al que se desea ver información con el texto:
     /informacion`;
 
 /**
