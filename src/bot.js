@@ -160,9 +160,6 @@ async function procesarRetroalimentacion (contexto) {
 	await comun.guardarVariablesSesion(contexto);
 }
 
-process.once('SIGINT', () => { bot.stop('SIGINT') });
-process.once('SIGTERM', () => { bot.stop('SIGTERM') });
-
 bot.start(inicio.accion);
 
 for (let comando of comandos) {
