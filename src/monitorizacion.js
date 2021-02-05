@@ -225,7 +225,7 @@ Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resu
 					mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.nombres} ${fila.apellidos}\n`;
 				}
 				if (administradorListaNegra === true) {
-					mensaje += `\nEste usuario es <b>Administrador</b> en la <b>Lista Negra</b> del <b>Bot de la Reputación</b>.\n`;
+					mensaje += `\nEste usuario es <b>Administrador</b> de la <b>Lista Negra</b> del <b>Bot de la Reputación</b>.\n`;
 				}
 				if (motivoExpulsion.length === 0) {
 					mensaje += `\nEste usuario no está en la Lista Negra.`;
