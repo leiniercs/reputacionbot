@@ -2,7 +2,7 @@
 // Produccion: 1342202179:AAHUaRsyypamrLOojbz7w3m3TjY7gdjpD1g
 // Desarrollo: 1250980023:AAEQdEYzdC2VEVeff6GWwCDieFm6YzK2CoU
 const botToken = '1342202179:AAHUaRsyypamrLOojbz7w3m3TjY7gdjpD1g';
-const Telegraf = require('telegraf');
+const { Telegraf } = require('telegraf');
 const bot = new Telegraf(botToken);
 //const fs = require('fs');
 const api = require('./api');
@@ -159,6 +159,9 @@ async function procesarRetroalimentacion (contexto) {
 
 	await comun.guardarVariablesSesion(contexto);
 }
+
+process.once('SIGINT', () => { bot.stop('SIGINT') });
+process.once('SIGTERM', () => { bot.stop('SIGTERM') });
 
 bot.start(inicio.accion);
 

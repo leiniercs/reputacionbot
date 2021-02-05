@@ -1,4 +1,5 @@
 const Telegraf = require('telegraf');
+const util = require('util');
 const comun = require('./comun');
 const { baseDatos } = require('./basedatos');
 const notificaciones = require('./notificaciones');
@@ -34,6 +35,7 @@ async function mostrar (contexto) {
 	let fila = {};
 	let usuario;
 	let motivoExpulsion = '';
+	let administradorListaNegra = false;
 	let mensaje = '';
 
 	if (contexto.message.from.is_bot === true) {
@@ -86,12 +88,12 @@ Se ha detectado que usted tiene su identidad verificada y, aún así, ha cambiad
 		;
 		return;
 	}
-
+/*
 	if (contexto.session.poseeUsuario === false || contexto.session.registrado === false || contexto.session.cambioUsuario === true || contexto.session.verificado === false) {
 		notificaciones.noElegibleInformeReputacion(contexto, contexto.message.reply_to_message.from, 1);
 		return;
 	}
-
+*/
 	if (contexto.update.message.reply_to_message !== undefined) {
 		if (contexto.update.message.reply_to_message.from.is_bot === true) {
 			return;
@@ -118,105 +120,8 @@ Se ha detectado que usted tiene su identidad verificada y, aún así, ha cambiad
 					}
 				}
 			}
-		}
-	}
-
-	if (typeof usuario === 'number') {
-		try {
-			instruccionSQL = `
-SELECT
-	motivos::text
-FROM listanegra
-WHERE (
-	id = $1
-)
-			`;
-			resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
-			if (resultadosUsuarios.rowCount > 0) {
-				motivoExpulsion = resultadosUsuarios.rows[0].motivos;
-			}
-
-			instruccionSQL = `
-SELECT
-	usuario::text,
-	tiempo::timestamptz
-FROM monitorizacion_usuarios
-WHERE (
-	id = $1
-)
-ORDER BY tiempo ASC
-			`;
-			resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
-
-			instruccionSQL = `
-SELECT
-	nombres::text,
-	apellidos::text,
-	tiempo::timestamptz
-FROM monitorizacion_nombres
-WHERE (
-	id = $1
-)
-ORDER BY tiempo ASC
-			`;
-			resultadosNombres = await baseDatos.query(instruccionSQL, [ usuario ]);
-		} catch (_e) {
-			return;
-		}
-
-		if (resultadosUsuarios.rowCount === 0 && resultadosNombres.rowCount === 0) {
-			contexto.telegram.getChat(usuario)
-				.then((informacion) => {
-					monitorizar(contexto, informacion);
-					mensaje = `<b>Información del usuario</b>
-
-<a href="tg://user?id=${informacion.id}">Enlace al usuario</a>
-Visto por primera vez: Ahora
-ID: ${informacion.id}`;
-					if (informacion.username !== undefined) {
-						mensaje += `\nUsuario: @${informacion.username}`;
-					}
-					if (informacion.first_name.length > 0) {
-						mensaje += `\nNombre: ${informacion.first_name} ${(informacion.last_name !== undefined ? informacion.last_name : '')}`;
-					}
-					if (motivoExpulsion.length === 0) {
-						mensaje += `\nEste usuario no está en la Lista Negra.`;
-					} else {
-						mensaje += `\n<b>Motivos de la inclusión en la Lista Negra</b>:\n${motivoExpulsion}`;
-					}
-					contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, { parse_mode: 'HTML', reply_to_message_id: contexto.update.message.message_id })
-						.then(() => {})
-						.catch(() => {})
-					;
-				})
-				.catch(() => {})
-			;
-			return;
 		} else {
-			mensaje = `<b>Información del usuario</b>
-
-<a href="tg://user?id=${usuario}">Enlace al usuario</a>
-Visto por primera vez: ${new Date(resultadosUsuarios.rows[0].tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
-ID: ${usuario}
-Usuario: ${(resultadosUsuarios.rows[resultadosUsuarios.rowCount - 1].usuario.length > 0 ? `@${resultadosUsuarios.rows[resultadosUsuarios.rowCount - 1].usuario}` : '[No definido]')}
-Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resultadosNombres.rows[resultadosNombres.rowCount - 1].apellidos}
-
-<b>Historial de usuarios</b>
-`;
-			for (fila of resultadosUsuarios.rows) {
-				mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.usuario}\n`;
-			}
-			mensaje += `
-<b>Historial de nombres</b>
-`;
-			for (fila of resultadosNombres.rows) {
-				mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.nombres} ${fila.apellidos}\n`;
-			}
-			if (motivoExpulsion.length === 0) {
-				mensaje += `\nEste usuario no está en la Lista Negra.`;
-			} else {
-				mensaje += `\n<b>Motivos de la inclusión en la Lista Negra</b>:\n${motivoExpulsion}`;
-			}
+			usuario = contexto.update.message.from.id;
 		}
 	}
 
@@ -229,43 +134,63 @@ FROM monitorizacion_usuarios
 WHERE (
 	usuario = $1
 )
-LIMIT 1
-			`;
+LIMIT 1`;
 			resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
 
 			if (resultadosUsuarios.rowCount > 0) {
-				usuario = resultadosUsuarios.rows[0].id;
+				usuario = parseInt(resultadosUsuarios.rows[0].id);
 			} else {
-				usuario = 0;
-			}
+				contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>No se pudo obtener el informe del usuario</b>
 
-			instruccionSQL = `
+El usuario al que desea consultar la información no existe en la base de datos, por lo que no se pudo generar el informe. Intente consultar el informe otra vez utilizando el ID, para mayor probabilidad de éxito.`, { parse_mode: 'HTML', reply_to_message_id: contexto.update.message.message_id })
+					.then(() => {})
+					.catch(() => {})
+				;
+			}
+		} catch (_e) {}
+	}
+
+	if (typeof usuario === 'number') {
+		contexto.telegram.getChat(usuario)
+			.then(async (informacion) => {
+				await monitorizar(contexto, informacion);
+				try {
+					instruccionSQL = `
 SELECT
 	motivos::text
 FROM listanegra
 WHERE (
 	id = $1
-)
-			`;
-			resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
-			if (resultadosUsuarios.rowCount > 0) {
-				motivoExpulsion = resultadosUsuarios.rows[0].motivos;
-			}
+)`;
+					resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
+					if (resultadosUsuarios.rowCount > 0) {
+						motivoExpulsion = resultadosUsuarios.rows[0].motivos;
+					}
 
-			instruccionSQL = `
+					instruccionSQL = `
 SELECT
-	id::bigint,
+	id::bigint
+FROM listanegra_administradores
+WHERE (
+	id = $1
+)`;
+					resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
+					if (resultadosUsuarios.rowCount > 0) {
+						administradorListaNegra = true;
+					}
+
+					instruccionSQL = `
+SELECT
 	usuario::text,
 	tiempo::timestamptz
 FROM monitorizacion_usuarios
 WHERE (
 	id = $1
 )
-ORDER BY tiempo ASC
-			`;
-			resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
+ORDER BY tiempo ASC`;
+					resultadosUsuarios = await baseDatos.query(instruccionSQL, [ usuario ]);
 
-			instruccionSQL = `
+					instruccionSQL = `
 SELECT
 	nombres::text,
 	apellidos::text,
@@ -274,19 +199,13 @@ FROM monitorizacion_nombres
 WHERE (
 	id = $1
 )
-ORDER BY tiempo ASC
-			`;
-			resultadosNombres = await baseDatos.query(instruccionSQL, [ usuario ]);
-		} catch (_e) {
-			return;
-		}
-		
-		if (resultadosUsuarios.rowCount === 0 && resultadosNombres.rowCount === 0) {
-			mensaje = `<b>No se pudo obtener el informe del usuario</b>
+ORDER BY tiempo ASC`;
+					resultadosNombres = await baseDatos.query(instruccionSQL, [ usuario ]);
+				} catch (_e) {
+					return;
+				}
 
-El usuario al que desea consultar la información no existe en la base de datos, por lo que no se pudo generar el informe. Intente consultar el informe otra vez utilizando el ID, para mayor probabilidad de éxito.`;
-		} else {
-			mensaje = `<b>Información del usuario</b>
+				mensaje = `<b>Información del usuario</b>
 
 <a href="tg://user?id=${usuario}">Enlace al usuario</a>
 Visto por primera vez: ${new Date(resultadosUsuarios.rows[0].tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
@@ -296,27 +215,39 @@ Nombre: ${resultadosNombres.rows[resultadosNombres.rowCount - 1].nombres} ${resu
 
 <b>Historial de usuarios</b>
 `;
-			for (fila of resultadosUsuarios.rows) {
-				mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.usuario}\n`;
-			}
-			mensaje += `
+				for (fila of resultadosUsuarios.rows) {
+					mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.usuario}\n`;
+				}
+				mensaje += `
 <b>Historial de nombres</b>
 `;
-			for (fila of resultadosNombres.rows) {
-				mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.nombres} ${fila.apellidos}\n`;
-			}
-			if (motivoExpulsion.length === 0) {
-				mensaje += `\nEste usuario no está en la Lista Negra.`;
-			} else {
-				mensaje += `\n<b>Motivos de la inclusión en la Lista Negra</b>:\n${motivoExpulsion}`;
-			}
-		}
-	}
+				for (fila of resultadosNombres.rows) {
+					mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${fila.nombres} ${fila.apellidos}\n`;
+				}
+				if (administradorListaNegra === true) {
+					mensaje += `\nEste usuario es <b>Administrador</b> en la <b>Lista Negra</b> del <b>Bot de la Reputación</b>.\n`;
+				}
+				if (motivoExpulsion.length === 0) {
+					mensaje += `\nEste usuario no está en la Lista Negra.`;
+				} else {
+					mensaje += `\n<b>Motivos de la inclusión en la Lista Negra</b>:\n${motivoExpulsion}`;
+				}
 
-	if (mensaje.length > 0) {
-		contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, { parse_mode: 'HTML', reply_to_message_id: contexto.update.message.message_id })
-			.then(() => {})
-			.catch(() => {})
+				if (mensaje.length > 0) {
+					contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, { parse_mode: 'HTML', reply_to_message_id: contexto.update.message.message_id })
+						.then(() => {})
+						.catch(() => {})
+					;
+				}
+			})
+			.catch((_e) => {
+				contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Lamentamos darle una mala noticia</b>
+
+No se pudo obtener los datos del usuario al que desea consultar la información, por lo que no se pudo generar el informe. Intente nuevamente en algunos minutos.`, { parse_mode: 'HTML', reply_to_message_id: contexto.update.message.message_id })
+					.then(() => {})
+					.catch(() => {})
+				;
+			})
 		;
 	}
 }
