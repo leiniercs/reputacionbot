@@ -120,6 +120,7 @@ Se ha detectado que usted tiene su identidad verificada y, aún así, ha cambiad
 	usuarioProcesamiento = new Usuario(usuario);
 	try {
 		await usuarioProcesamiento.obtenerTelegramDatosUsuario(contexto);
+		await usuarioProcesamiento.obtenerEstimacionCreacion();
 		await usuarioProcesamiento.obtenerHistorialListadoNombres();
 		await usuarioProcesamiento.obtenerHistorialListadoUsuarios();
 		await usuarioProcesamiento.obtenerDatosListaNegra();
@@ -130,16 +131,23 @@ Se ha detectado que usted tiene su identidad verificada y, aún así, ha cambiad
 		if (usuarioProcesamiento.historial.usuarios.length > 0) {
 			vistoPrimeraVez = new Date(usuarioProcesamiento.historial.usuarios[0].tiempo);
 		} else {
-			if (nombres.length > 0) {
+			if (usuarioProcesamiento.datosActuales.usuario.length > 0) {
 				await usuarioProcesamiento.registrarHistorialUsuario();
+			}
+		}
+		if (usuarioProcesamiento.historial.nombres.length === 0) {
+			if (nombres.length > 0) {
 				await usuarioProcesamiento.registrarHistorialNombres();
 			}
+		}
+		if (usuarioProcesamiento.historial.usuarios.length === 0 && usuarioProcesamiento.historial.nombres.length === 0 && usuarioProcesamiento.datosActuales.usuario.length === 0 && nombres.length === 0) {
+			throw new Error('Usuario inexistente');
 		}
 
 		mensaje = `<b>Información del usuario</b>
 
 <a href="tg://user?id=${usuarioProcesamiento.id}">Enlace al usuario</a>
-Visto por primera vez: ${vistoPrimeraVez.toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
+Fecha creación: ${(usuarioProcesamiento.estimacionCreacion.operador === -1 ? 'Antes de' : (usuarioProcesamiento.estimacionCreacion.operador === 0 ? 'Aprox.' : 'Después de' ))} ${usuarioProcesamiento.estimacionCreacion.tiempo.toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric' })}
 ID: ${usuarioProcesamiento.id}
 Usuario: ${(usuarioProcesamiento.datosActuales.usuario.length > 0 ? `@${usuarioProcesamiento.datosActuales.usuario}` : '[No definido]')}
 Nombre: ${(nombres.length > 0 ? nombres : '[No definido]')}
@@ -177,7 +185,7 @@ Nombre: ${(nombres.length > 0 ? nombres : '[No definido]')}
 	} catch(_e) {
 		contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>No se pudo obtener el informe del usuario</b>
 
-El usuario al que desea consultar la información no existe en la base de datos, por lo que no se pudo generar el informe. Intente consultar el informe otra vez utilizando el ID, para mayor probabilidad de éxito.`, { parse_mode: 'HTML', reply_to_message_id: contexto.update.message.message_id })
+No se pudo obtener ninguna información del usuario solicitado desde Telegram ni existe en la base de datos, por lo que no se pudo generar el informe. Si ha utilizado un nombre de usuario entonces intente consultar el informe otra vez utilizando el ID, para mayor probabilidad de éxito.`, { parse_mode: 'HTML', reply_to_message_id: contexto.update.message.message_id })
 			.then(() => {})
 			.catch(() => {})
 		;

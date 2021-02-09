@@ -133,4 +133,37 @@ CREATE TABLE listanegra (
 GRANT SELECT, INSERT, UPDATE, DELETE ON listanegra TO reputacionbot;
 CREATE INDEX ind_listanegra_id_administrador ON listanegra (id_administrador);
 
+CREATE TABLE cuentas_creacion (
+	id BIGINT NOT NULL,
+	tiempo TIMESTAMPTZ DEFAULT NOW(),
+	CONSTRAINT pkey_cuentas_creacion_id PRIMARY KEY (id)
+);
+GRANT SELECT, INSERT, UPDATE ON cuentas_creacion TO reputacionbot;
+
+CREATE FUNCTION estimar_tiempo_creacion(IN id_cuenta_telegram BIGINT) RETURNS TABLE (operador SMALLINT, tiempo TIMESTAMPTZ) AS $$
+	DECLARE
+		registros_menor RECORD;
+		registros_mayor RECORD;
+		operador SMALLINT := 0;
+		tiempo TIMESTAMPTZ := NOW();
+	BEGIN
+		SELECT * INTO registros_menor FROM cuentas_creacion WHERE (id < id_cuenta_telegram) ORDER BY tiempo DESC LIMIT 1;
+		SELECT * INTO registros_mayor FROM cuentas_creacion WHERE (id > id_cuenta_telegram) ORDER BY tiempo ASC LIMIT 1;
+
+		IF registros_menor ISNULL THEN
+			SELECT * INTO registros_menor FROM cuentas_creacion ORDER BY tiempo ASC LIMIT 1;
+			operador := -1;
+		END IF;
+
+		IF registros_mayor ISNULL THEN
+			SELECT * INTO registros_mayor FROM cuentas_creacion ORDER BY tiempo DESC LIMIT 1;
+			operador := 1;
+		END IF;
+
+		SELECT date_trunc('day', registros_mayor.tiempo - age(registros_mayor.tiempo, registros_menor.tiempo) / 2) INTO tiempo;
+
+		RETURN QUERY SELECT operador, tiempo;
+	END;
+$$ LANGUAGE plpgsql;
+
 COMMIT;
