@@ -5,6 +5,7 @@ const botToken = '1342202179:AAHUaRsyypamrLOojbz7w3m3TjY7gdjpD1g';
 const { Telegraf } = require('telegraf');
 const bot = new Telegraf(botToken);
 //const fs = require('fs');
+const { Operaciones, Usuario } = require('./usuario');
 const api = require('./api');
 const comun = require('./comun');
 const inicio = require('./inicio');
@@ -159,6 +160,40 @@ async function procesarRetroalimentacion (contexto) {
 
 	await comun.guardarVariablesSesion(contexto);
 }
+
+bot.use((contexto, siguiente) => {
+	if (contexto.update.message !== undefined) {
+		monitorizacion.registrarCambios(contexto)
+			.then(() => {
+				Usuario.comprobarCambioUsuario(contexto, true)
+					.then((usuariosSancionados) => {
+						for (let i = 0; i < usuariosSancionados.length; i++) {
+							const idUsuarioSancionado = usuariosSancionados[i];
+
+							setTimeout(() => {
+								const usuario = new Usuario(idUsuarioSancionado);
+								const nombres = `${usuario.identidad.primerNombre} ${usuario.identidad.segundoNombre}`;
+
+								contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Cambio de identidad detectado!</b>
+
+Se ha detectado el usuario <a href="tg://user?id=${usuario.id}">${nombres.trim()} (${usuario.id})</a> tiene su identidad verificada y, aún así, ha cambiado su nombre de usuario, por lo que ha incurrido en una falta que es sancionada con la invalidación de su verificación y todas sus evaluaciones positivas.
+
+Si el usuario ${nombres.trim()} desea volver a utilizar los servicios del <b>Bot de la Reputación</b> entonces debe volver a verificar su identidad.`, { parse_mode: 'HTML', reply_to_message_id: contexto.update.message.message_id })
+									.then(() => {})
+									.catch(() => {})
+								;
+							}, 1000 * i);
+						}
+					})
+					.catch(() => {})
+				;
+			})
+			.catch(() => {})
+		;
+	}
+
+	return siguiente();
+});
 
 bot.start(inicio.accion);
 

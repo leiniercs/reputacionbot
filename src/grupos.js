@@ -39,7 +39,7 @@ async function accion (contexto) {
  * @param {Telegraf} contexto Referencia al objeto de la sesion
  */
 async function procesarNuevoMiembro (contexto) {
-	let nuevoMiembro = {};
+//	let nuevoMiembro = {};
 	let configuracion = {};
 
 	if (contexto.update.message.new_chat_member.is_bot === true && contexto.update.message.new_chat_member.id === idBot) {
@@ -101,18 +101,18 @@ Usted ha añadido al <b>Bot de la Reputación</b> al grupo <b>'${grupo}'</b> per
 		configuracion = { listaNegra: false };
 	}
 
-	for (nuevoMiembro of contexto.update.message.new_chat_members) {
-		monitorizacion.monitorizar(contexto, nuevoMiembro, contexto.update.message.chat.id)
-			.then(() => {
+	for (let nuevoMiembro of contexto.update.message.new_chat_members) {
+//		monitorizacion.monitorizar(contexto, nuevoMiembro, contexto.update.message.chat.id)
+//			.then(() => {
 				if (configuracion.listaNegra === true) {
 					listaNegra.listaNegraProcesar(contexto, { usuario: nuevoMiembro, chat: contexto.update.message.chat.id})
 						.then(() => {})
 						.catch(() => {})
 					;
 				}
-			})
-			.catch(() => {})
-		;
+//			})
+//			.catch(() => {})
+//		;
 	}
 
 	bienvenida(contexto);
@@ -123,11 +123,13 @@ Usted ha añadido al <b>Bot de la Reputación</b> al grupo <b>'${grupo}'</b> per
  * @param {Telegraf} contexto Referencia al objeto de la sesion
  */
 async function procesarPartidaMiembro (contexto) {
+/*
 	monitorizacion.monitorizar(contexto, contexto.update.message.left_chat_member, undefined)
 		.then(() => {})
 		.catch(() => {})
 	;
 	monitorizacion.eliminarGrupoUsuario(contexto.update.message.left_chat_member.id, contexto.update.message.chat.id);
+*/
 }
 
 /**
@@ -158,7 +160,13 @@ async function procesarNuevoMensaje (contexto) {
 		.then(() => {
 			if (grupos.has(contexto.update.message.chat.id) === true) {
 				configuracion = grupos.get(contexto.update.message.chat.id);
-
+				if (configuracion.listaNegra === true) {
+					listaNegra.listaNegraProcesar(contexto, { usuario: contexto.update.message.from, chat: contexto.update.message.chat.id})
+						.then(() => {})
+						.catch(() => {})
+					;
+				}
+/*
 				monitorizacion.monitorizar(contexto, contexto.update.message.from, contexto.update.message.chat.id)
 					.then(() => {
 						if (configuracion.listaNegra === true) {
@@ -196,6 +204,7 @@ async function procesarNuevoMensaje (contexto) {
 						.catch(() => {})
 					;
 				}
+*/
 
 				if (configuracion.modoEstricto.activado === true) {
 					if (configuracion.modoEstricto.mensajes === false) {

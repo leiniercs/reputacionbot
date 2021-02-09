@@ -108,7 +108,7 @@ CREATE INDEX ind_monitorizacion_usuarios_grupos_grupo ON monitorizacion_usuarios
 CREATE TABLE monitorizacion_nombres (
 	id BIGINT NOT NULL,
 	nombres VARCHAR(128) NOT NULL,
-	apellidos VARCHAR(128) NOT NULL,
+	apellidos VARCHAR(128) DEFAULT '',
 	tiempo TIMESTAMPTZ DEFAULT NOW()
 );
 GRANT SELECT, INSERT, UPDATE, DELETE ON monitorizacion_nombres TO reputacionbot;
