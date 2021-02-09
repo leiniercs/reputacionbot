@@ -205,7 +205,10 @@ El usuario @${usuario} no ha sido visto jamás por el <b>Bot de la Reputación</
 		} else {
 			mensaje = `<b>Lamentamos darle una mala noticia!</b>
 
-No se pudo ejecutar la acción solicitada debido a que no ha especificado los criterios de búsqueda.`;
+No se pudo ejecutar la acción solicitada debido a que no ha especificado los criterios de búsqueda.
+
+Sintaxis:
+  /lnbuscar criterios de busqueda`;
 		}
 	}
 
