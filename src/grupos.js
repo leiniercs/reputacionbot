@@ -91,6 +91,11 @@ Usted ha añadido al <b>Bot de la Reputación</b> al grupo <b>'${grupo}'</b> per
 		;
 		return;
 	}
+	
+	monitorizacion.registrarCambios(contexto)
+		.then(() => {})
+		.catch(() => {})
+	;
 
 	try {
 		await leerConfiguracion(contexto.update.message.chat.id);
@@ -123,6 +128,11 @@ Usted ha añadido al <b>Bot de la Reputación</b> al grupo <b>'${grupo}'</b> per
  * @param {Telegraf} contexto Referencia al objeto de la sesion
  */
 async function procesarPartidaMiembro (contexto) {
+	monitorizacion.registrarCambios(contexto)
+		.then(() => {})
+		.catch(() => {})
+	;
+
 /*
 	monitorizacion.monitorizar(contexto, contexto.update.message.left_chat_member, undefined)
 		.then(() => {})
@@ -144,6 +154,11 @@ async function procesarNuevoMensaje (contexto) {
 	if (contexto.update.message.from.is_bot === true || contexto.update.message.chat.id > 0 || contexto.update.message.from.id === idUsuarioTelegram) {
 		return;
 	}
+	
+	monitorizacion.registrarCambios(contexto)
+		.then(() => {})
+		.catch(() => {})
+	;
 
 	if (contexto.update.message.from.first_name !== undefined) {
 		usuario = contexto.update.message.from.first_name;
@@ -282,7 +297,7 @@ async function registrarGrupo (contexto) {
 						uniones: false,
 						mensajes: false
 					},
-					listaNegra: false,
+					listaNegra: true,
 					privado: (contexto.update.message.chat.type === 'private')
 				});
 

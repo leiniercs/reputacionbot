@@ -96,7 +96,7 @@ const comandos = [
 ];
 
 
-async function mostrarAyuda (contexto) {
+async function mostrarAyuda(contexto) {
 	let mensaje = '';
 	let masComandos = false;
 
@@ -115,7 +115,7 @@ async function mostrarAyuda (contexto) {
 	;
 }
 
-async function procesarRetroalimentacion (contexto) {
+async function procesarRetroalimentacion(contexto) {
 	const datos = JSON.parse(contexto.update.callback_query.data);
 
 	await comun.inicializarVariablesSesion(contexto);
@@ -161,36 +161,30 @@ async function procesarRetroalimentacion (contexto) {
 	await comun.guardarVariablesSesion(contexto);
 }
 
-bot.use((contexto, siguiente) => {
-	if (contexto.update.message !== undefined) {
-		monitorizacion.registrarCambios(contexto)
-			.then(() => {
-				Usuario.comprobarCambioUsuario(contexto, true)
-					.then((usuariosSancionados) => {
-						for (let i = 0; i < usuariosSancionados.length; i++) {
-							const idUsuarioSancionado = usuariosSancionados[i];
+bot.use(async (contexto, siguiente) => {
+	try {
+		if (contexto.update.message !== undefined) {
+			//await monitorizacion.registrarCambios(contexto);
+			const usuariosSancionados = await Usuario.comprobarCambioUsuario(contexto, true);
+			for (let i = 0; i < usuariosSancionados.length; i++) {
+				const idUsuarioSancionado = usuariosSancionados[i];
 
-							setTimeout(() => {
-								const usuario = new Usuario(idUsuarioSancionado);
-								const nombres = `${usuario.identidad.primerNombre} ${usuario.identidad.segundoNombre}`;
+				setTimeout(() => {
+					const usuario = new Usuario(idUsuarioSancionado);
+					const nombres = `${usuario.identidad.primerNombre} ${usuario.identidad.segundoNombre}`;
 
-								contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Cambio de identidad detectado!</b>
+					contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Cambio de identidad detectado!</b>
 
 Se ha detectado el usuario <a href="tg://user?id=${usuario.id}">${nombres.trim()} (${usuario.id})</a> tiene su identidad verificada y, aún así, ha cambiado su nombre de usuario, por lo que ha incurrido en una falta que es sancionada con la invalidación de su verificación y todas sus evaluaciones positivas.
 
 Si el usuario ${nombres.trim()} desea volver a utilizar los servicios del <b>Bot de la Reputación</b> entonces debe volver a verificar su identidad.`, { parse_mode: 'HTML', reply_to_message_id: contexto.update.message.message_id })
-									.then(() => {})
-									.catch(() => {})
-								;
-							}, 1000 * i);
-						}
-					})
-					.catch(() => {})
-				;
-			})
-			.catch(() => {})
-		;
-	}
+						.then(() => {})
+						.catch(() => {})
+					;
+				}, 1000 * i);
+			}
+		}
+	} catch (_e) {}
 
 	return siguiente();
 });

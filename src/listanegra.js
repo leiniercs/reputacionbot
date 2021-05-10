@@ -6,6 +6,7 @@ const notificaciones = require('./notificaciones');
 // Produccion: 1342202179
 // Desarrollo: 1250980023
 const idBot = 1342202179;
+const idChatCEDC = -1001496591819;
 
 const comandos = {
     administradores: {
@@ -126,7 +127,7 @@ WHERE (
 		if (usuarioAutorizado === false) {
 			contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Lamentamos darle una mala noticia!</b>
 
-Usted ha intentado ejecutar un comando en el módulo de la Lista Negra del <b>Bot de la Reputación</b> pero, lamentablemente, no posee privilegios administrativos, por lo que no está autorizado(a) a ejecutar esta acción.`, {
+Usted ha intentado ejecutar un comando en el módulo de la <b>Lista Negra</b> del <b>Bot de la Reputación</b> pero, lamentablemente, no posee privilegios administrativos, por lo que no está autorizado(a) a ejecutar esta acción.`, {
 					parse_mode: 'HTML',
 					reply_to_message_id: contexto.update.message.message_id
 				})
@@ -540,8 +541,11 @@ async function listaNegraAgregar (contexto, usuario, motivos) {
 	let resultados = {};
 	let idAdministrador = 0;
 	let nombresAdministrador = '';
+	let idAdministradorActualizacion = 0;
+	let nombresAdministradorActualizacion = '';
 	let motivosAnteriores = '';
 	let mensaje = '';
+	let expulsar = true;
 
 	if (motivos.length === 0) {
 		contexto.telegram.sendMessage(contexto.update.message.chat.id, `<b>Lamentamos darle una mala noticia!</b>
@@ -569,6 +573,7 @@ WHERE (listanegra_administradores.id = $1)
 
 		resultados = await baseDatos.query(instruccionSQL, [ usuario ]);
 		if (resultados.rowCount > 0) {
+			expulsar = false;
 			idAdministrador = resultados.rows[0].id;
 			nombresAdministrador = `${resultados.rows[0].primer_nombre} ${resultados.rows[0].segundo_nombre}`;
 			mensaje = `<b>Lamentamos darle una mala noticia</b>
@@ -577,6 +582,23 @@ No se pudo ejecutar la acción solicitada debido a que el usuario <a href="tg://
 		} else {
 			instruccionSQL = `
 SELECT
+	listanegra.id_administrador::bigint AS id_administrador,
+	identidades.datos_personales_primer_nombre::text AS primer_nombre,
+	identidades.datos_personales_segundo_nombre::text AS segundo_nombre
+FROM listanegra
+LEFT JOIN identidades ON (identidades.usuario_id = listanegra.id_administrador)
+WHERE (listanegra.id_administrador = $1)
+			`;
+
+			resultados = await baseDatos.query(instruccionSQL, [ contexto.update.message.from.id ]);
+			if (resultados.rowCount > 0) {
+				idAdministradorActualizacion = resultados.rows[0].id_administrador;
+				nombresAdministradorActualizacion = `${resultados.rows[0].primer_nombre} ${resultados.rows[0].segundo_nombre}`;
+			}
+
+			instruccionSQL = `
+SELECT
+	listanegra.id::bigint AS id,
 	listanegra.id_administrador::bigint AS id_administrador,
 	identidades.datos_personales_primer_nombre::text AS primer_nombre,
 	identidades.datos_personales_segundo_nombre::text AS segundo_nombre,
@@ -599,33 +621,57 @@ No se pudo agregar ni actualizar el <a href="tg://user?id=${usuario}">usuario su
 					instruccionSQL = 'UPDATE listanegra SET motivos = $2 WHERE (id = $1)';
 					mensaje = `<b>Lista Negra - Actualización de motivos</b>
 
+<b>Administrador que actualiza:</b> <a href="tg://user?id=${idAdministradorActualizacion}">${nombresAdministradorActualizacion.trim()}</a>
+
 <b>Fecha de actualización:</b> ${new Date().toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
 <b>Administrador inicial:</b> <a href="tg://user?id=${idAdministrador}">${nombresAdministrador.trim()}</a>
+<b>Usuario expulsado:</b> <a href="tg://user?id=${resultados.rows[0].id}">${resultados.rows[0].id}</a>
 
 <b>Motivos actuales:</b>
 ${motivos}
 
 <b>Motivos anteriores:</b>
 ${motivosAnteriores}`;
-				resultados = await baseDatos.query(instruccionSQL, [ usuario, motivos ]);
+					resultados = await baseDatos.query(instruccionSQL, [ usuario, motivos ]);
+					if (contexto.update.message.chat.id !== idChatCEDC) {
+						contexto.telegram.sendMessage(idChatCEDC, mensaje, {
+								parse_mode: 'HTML'
+							})
+							.then(() => {})
+							.catch(() => {})
+						;
+					}
 				}
 			} else {
 				instruccionSQL = 'INSERT INTO listanegra (id, motivos, id_administrador) VALUES ($1, $2, $3)';
 				mensaje = `<b>Lista Negra - Nuevo usuario agregado</b>
 
 <b>Fecha:</b> ${new Date().toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
+<b>Administrador:</b> <a href="tg://user?id=${idAdministradorActualizacion}">${nombresAdministradorActualizacion.trim()}</a>
+<b>Usuario expulsado:</b> <a href="tg://user?id=${usuario}">${usuario}</a>
+
 <b>Motivos:</b>
 ${motivos}`;
 				resultados = await baseDatos.query(instruccionSQL, [ usuario, motivos, contexto.update.message.from.id ]);
+				if (contexto.update.message.chat.id !== idChatCEDC) {
+					contexto.telegram.sendMessage(idChatCEDC, mensaje, {
+							parse_mode: 'HTML'
+						})
+						.then(() => {})
+						.catch(() => {})
+					;
+				}
 			}
 		}
-
+		
 		contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, {
 				parse_mode: 'HTML',
 				reply_to_message_id: contexto.update.message.message_id
 			})
 			.then(() => {
-				listaNegraExpulsarGrupos(contexto, usuario, motivos);
+				if (expulsar === true) {
+					listaNegraExpulsarGrupos(contexto, usuario, motivos);
+				}
 			})
 			.catch(() => {})
 		;
@@ -639,6 +685,8 @@ ${motivos}`;
  */
 async function listaNegraRevocar (contexto, usuario) {
 	let instruccionSQL = '';
+	let idAdministradorRevocacion = 0;
+	let nombresAdministradorRevocacion = '';
 	let idAdministrador = 0;
 	let nombresAdministrador = '';
 	let motivos = '';
@@ -646,6 +694,21 @@ async function listaNegraRevocar (contexto, usuario) {
 
 	try {
 		instruccionSQL = `
+SELECT
+	listanegra_administradores.id::bigint AS id,
+	identidades.datos_personales_primer_nombre::text AS primer_nombre,
+	identidades.datos_personales_segundo_nombre::text AS segundo_nombre
+FROM listanegra_administradores
+LEFT JOIN identidades ON (identidades.usuario_id = listanegra_administradores.id)
+WHERE (listanegra_administradores.id = $1)
+		`;
+
+		resultados = await baseDatos.query(instruccionSQL, [ contexto.update.message.from.id ]);
+		if (resultados.rowCount > 0) {
+			idAdministradorRevocacion = resultados.rows[0].id_administrador;
+			nombresAdministradorRevocacion = `${resultados.rows[0].primer_nombre} ${resultados.rows[0].segundo_nombre}`;
+
+			instruccionSQL = `
 SELECT
 	listanegra.id_administrador::bigint AS id_administrador,
 	identidades.datos_personales_primer_nombre::text AS primer_nombre,
@@ -655,16 +718,18 @@ SELECT
 FROM listanegra
 LEFT JOIN identidades ON (identidades.usuario_id = listanegra.id_administrador)
 WHERE (listanegra.id = $1)
-		`;
+			`;
 
-		resultados = await baseDatos.query(instruccionSQL, [ usuario ]);
-		if (resultados.rowCount > 0) {
-			idAdministrador = resultados.rows[0].id_administrador;
-			nombresAdministrador = `${resultados.rows[0].primer_nombre} ${resultados.rows[0].segundo_nombre}`;
-			motivos = resultados.rows[0].motivos;
-			mensaje = `<b>Lista Negra - Revocación de un usuario</b>
+			resultados = await baseDatos.query(instruccionSQL, [ usuario ]);
+			if (resultados.rowCount > 0) {
+				idAdministrador = resultados.rows[0].id_administrador;
+				nombresAdministrador = `${resultados.rows[0].primer_nombre} ${resultados.rows[0].segundo_nombre}`;
+				motivos = resultados.rows[0].motivos;
+				mensaje = `<b>Lista Negra - Revocación de un usuario</b>
 
 Se ha revocado a un usuario de la <b>Lista Negra</b>. Los detalles de la expulsión son:
+
+<b>Administrador que revoca:</b> <a href="tg://user?id=${idAdministradorRevocacion}">${nombresAdministradorRevocacion.trim()}</a>
 
 <b>Fecha de expulsión:</b> ${new Date(resultados.rows[0].tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })}
 <b>Administrador:</b> <a href="tg://user?id=${idAdministrador}">${nombresAdministrador.trim()}</a>
@@ -672,21 +737,30 @@ Se ha revocado a un usuario de la <b>Lista Negra</b>. Los detalles de la expulsi
 
 <b>Motivos:</b>
 ${motivos}`;
-			instruccionSQL = 'DELETE FROM listanegra WHERE (id = $1)';
-			resultados = await baseDatos.query(instruccionSQL, [ usuario ]);
-		} else {
-			mensaje = `<b>Lamentamos darle una mala noticia</b>
+				instruccionSQL = 'DELETE FROM listanegra WHERE (id = $1)';
+				resultados = await baseDatos.query(instruccionSQL, [ usuario ]);
+				if (contexto.update.message.chat.id !== idChatCEDC) {
+					contexto.telegram.sendMessage(idChatCEDC, mensaje, {
+							parse_mode: 'HTML'
+						})
+						.then(() => {})
+						.catch(() => {})
+					;
+				}
+			} else {
+				mensaje = `<b>Lamentamos darle una mala noticia</b>
 
 No se pudo revocar al <a href="tg://user?id=${usuario}">usuario suministrado</a> debido a que no existe ninguna entrada para dicho usuario en la <b>Lista Negra</b> del <b>Bot de la Reputación</b>.`;
-		}
+			}
 
-		contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, {
-				parse_mode: 'HTML',
-				reply_to_message_id: contexto.update.message.message_id
-			})
-			.then(() => {})
-			.catch(() => {})
-		;
+			contexto.telegram.sendMessage(contexto.update.message.chat.id, mensaje, {
+					parse_mode: 'HTML',
+					reply_to_message_id: contexto.update.message.message_id
+				})
+				.then(() => {})
+				.catch(() => {})
+			;
+		}
 	} catch (_e) {}
 }
 

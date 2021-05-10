@@ -121,38 +121,38 @@ Se ha detectado que usted tiene su identidad verificada y, aún así, ha cambiad
 	try {
 		await usuarioProcesamiento.obtenerTelegramDatosUsuario(contexto);
 		await usuarioProcesamiento.obtenerEstimacionCreacion();
-		await usuarioProcesamiento.obtenerHistorialListadoNombres();
-		await usuarioProcesamiento.obtenerHistorialListadoUsuarios();
+//		await usuarioProcesamiento.obtenerHistorialListadoNombres();
+//		await usuarioProcesamiento.obtenerHistorialListadoUsuarios();
+		await usuarioProcesamiento.obtenerDatosRegistro();
 		await usuarioProcesamiento.obtenerDatosListaNegra();
-
-		nombres = `${usuarioProcesamiento.datosActuales.nombres} ${usuarioProcesamiento.datosActuales.apellidos}`;
-		nombres = nombres.trim();
-
-		if (usuarioProcesamiento.historial.usuarios.length > 0) {
-			vistoPrimeraVez = new Date(usuarioProcesamiento.historial.usuarios[0].tiempo);
-		} else {
+/*
+		if (usuarioProcesamiento.historial.usuarios.length === 0) {
 			if (usuarioProcesamiento.datosActuales.usuario.length > 0) {
-				await usuarioProcesamiento.registrarHistorialUsuario();
+				await usuarioProcesamiento.registrarHistorialUsuario(usuarioProcesamiento.datosActuales.usuario);
 			}
 		}
 		if (usuarioProcesamiento.historial.nombres.length === 0) {
-			if (nombres.length > 0) {
-				await usuarioProcesamiento.registrarHistorialNombres();
+			if (usuarioProcesamiento.datosActuales.nombres.length > 0) {
+				await usuarioProcesamiento.registrarHistorialNombres(usuarioProcesamiento.datosActuales.nombres);
 			}
 		}
-		if (usuarioProcesamiento.historial.usuarios.length === 0 && usuarioProcesamiento.historial.nombres.length === 0 && usuarioProcesamiento.datosActuales.usuario.length === 0 && nombres.length === 0) {
+		if (usuarioProcesamiento.historial.usuarios.length === 0 && usuarioProcesamiento.historial.nombres.length === 0 && usuarioProcesamiento.datosActuales.usuario.length === 0 && usuarioProcesamiento.datosActuales.nombres.length === 0 && usuarioProcesamiento.listaNegra.motivos.length === 0) {
 			throw new Error('Usuario inexistente');
 		}
-
+*/
+		if (usuarioProcesamiento.datosActuales.usuario.length === 0 && usuarioProcesamiento.datosActuales.nombres.length === 0 && usuarioProcesamiento.listaNegra.motivos.length === 0) {
+			throw new Error('Usuario inexistente');
+		}
+		
 		mensaje = `<b>Información del usuario</b>
 
 <a href="tg://user?id=${usuarioProcesamiento.id}">Enlace al usuario</a>
 Fecha creación: ${(usuarioProcesamiento.estimacionCreacion.operador === -1 ? 'Antes de' : (usuarioProcesamiento.estimacionCreacion.operador === 0 ? 'Aprox.' : 'Después de' ))} ${usuarioProcesamiento.estimacionCreacion.tiempo.toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric' })}
 ID: ${usuarioProcesamiento.id}
 Usuario: ${(usuarioProcesamiento.datosActuales.usuario.length > 0 ? `@${usuarioProcesamiento.datosActuales.usuario}` : '[No definido]')}
-Nombre: ${(nombres.length > 0 ? nombres : '[No definido]')}
+Nombres: ${(usuarioProcesamiento.datosActuales.nombres.length > 0 ? usuarioProcesamiento.datosActuales.nombres : '[No definido]')}
 `;
-
+/*
 		if (usuarioProcesamiento.historial.usuarios.length > 0) {
 			mensaje += '\n<b>Historial de usuarios</b>\n';
 		}
@@ -163,17 +163,18 @@ Nombre: ${(nombres.length > 0 ? nombres : '[No definido]')}
 			mensaje += '\n<b>Historial de nombres</b>\n';
 		}
 		for (let fila of usuarioProcesamiento.historial.nombres) {
-			nombres = `${fila.nombres} ${fila.apellidos}`;
-			nombres = nombres.trim();
-			mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${(nombres.length > 0 ? nombres : '[No definido]')}\n`;
+			mensaje += `${new Date(fila.tiempo).toLocaleString('es', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' })} - ${(fila.nombres.length > 0 ? fila.nombres : '[No definido]')}\n`;
+		}
+*/
+		if (usuarioProcesamiento.registro.verificado === true) {
+			mensaje += `\nEste usuario posee su identidad verificada en el <b>Bot de la Reputación</b>.\n`;
 		}
 		if (usuarioProcesamiento.listaNegra.esAdministrador === true) {
 			mensaje += `\nEste usuario es <b>Administrador</b> de la <b>Lista Negra</b> del <b>Bot de la Reputación</b>.\n`;
 		}
-		if (usuarioProcesamiento.listaNegra.motivos.length === 0) {
-			mensaje += `\nEste usuario no está en la Lista Negra.`;
-		} else {
-			mensaje += `\n<b>Motivos de la inclusión en la Lista Negra</b>:\n${usuarioProcesamiento.listaNegra.motivos}`;
+		if (usuarioProcesamiento.listaNegra.motivos.length > 0) {
+			mensaje += `\nEste usuario está sancionado en la <b>Lista Negra</b> del <b>Bot de la Reputación</b>.
+<b>Motivos de la sanción:</b>\n${usuarioProcesamiento.listaNegra.motivos}`;
 		}
 
 		if (mensaje.length > 0) {
@@ -325,16 +326,13 @@ No se pudo obtener los datos del usuario al que desea consultar la información,
  */
 async function registrarCambios(contexto) {
 	let comprobaciones = [];
-	let usuario;
-	let realizarRegistroNombres = false;
-	let realizarRegistroApellidos = false;
-	let realizarRegistroUsuario = false;
-	let notificarCambios = false;
-	let mensaje = '';
+	let agregar = true;
+	let comprobacionesCuradas = [];
+	const usuario = new Usuario(0);
 
 	if (contexto.update.message !== undefined) {
 		if (contexto.update.message.from !== undefined) {
-			comprobaciones.push(contexto.update.message);
+			comprobaciones.push({ from: contexto.update.message.from, chat: contexto.update.message.chat });
 		}
 		if (contexto.update.message.new_chat_members !== undefined) {
 			for (let nuevoMiembro of contexto.update.message.new_chat_members) {
@@ -346,50 +344,74 @@ async function registrarCambios(contexto) {
 		}
 	}
 	if (contexto.update.edited_message !== undefined) {
-		comprobaciones.push(contexto.update.edited_message);
+		comprobaciones.push({ from: contexto.update.edited_message.from, chat: contexto.update.message.chat });
 	}
 	if (contexto.update.forward_from !== undefined) {
-		comprobaciones.push(contexto.update.forward_from);
+		comprobaciones.push({ from: contexto.update.forward_from.from, chat: contexto.update.message.chat });
 	}
 	if (contexto.update.callback_query !== undefined) {
-		comprobaciones.push(contexto.update.callback_query);
+		comprobaciones.push({ from: contexto.update.callback_query.from, chat: contexto.update.message.chat });
 	}
 
-	for (let comprobacion of comprobaciones) {
-		try {
-			if (comprobacion.from.is_bot === true) { continue; }
+	for (let i1 = 0; i1 < comprobaciones.length; i1++) {
+		if (comprobaciones[i1].from.is_bot === true || comprobaciones[i1].from.id === 777000) {
+			//comprobaciones.splice(i1, 1);
+			//i1--;
+			continue;
+		} else {
+			agregar = true;
+			for (let i2 = i1 + 1; i2 < comprobaciones.length; i2++) {
+				if (comprobaciones[i2].from.id === comprobaciones[i1].from.id) {
+					agregar = false;
+					break;
+					//comprobaciones.splice(i2, 1);
+					//i2--;
+				}
+			}
+			if (agregar === true) {
+				comprobacionesCuradas.push(comprobaciones[i1]);
+			}
+		}
+	}
 
-			usuario = new Usuario(comprobacion.from.id);
-			await usuario.obtenerTelegramDatosUsuario(contexto);
+//	console.debug(`${comprobacionesCuradas.length}`);
+
+	for (let i = 0; i < comprobacionesCuradas.length; i++) {
+		try {
+
+			usuario.inicializarVariables();
+			usuario.id = comprobacionesCuradas[i].from.id;
+			let nombres = '';
+			let nombresAnteriores = '';
+			let usuarioAnterior = '';
+			let realizarRegistroNombres = false;
+			let realizarRegistroUsuario = false;
+			let notificarCambios = false;
+			let mensaje = '';
+
 			await usuario.obtenerHistorialListadoNombres();
 			await usuario.obtenerHistorialListadoUsuarios();
 
+			nombres = `${(comprobacionesCuradas[i].from.first_name !== undefined ? comprobacionesCuradas[i].from.first_name : '')}${(comprobacionesCuradas[i].from.last_name !== undefined ? ` ${comprobacionesCuradas[i].from.last_name}` : '')}`;
+
 			if (usuario.historial.nombres.length > 0) {
-				if (usuario.historial.nombres[usuario.historial.nombres.length - 1].nombres !== usuario.datosActuales.nombres) {
+				if (usuario.historial.nombres[usuario.historial.nombres.length - 1].nombres !== nombres) {
+					nombresAnteriores = usuario.historial.nombres[usuario.historial.nombres.length - 1].nombres;
 					realizarRegistroNombres = true;
-					notificarCambios = true;
-				}
-				if (usuario.historial.nombres[usuario.historial.nombres.length - 1].apellidos !== usuario.datosActuales.apellidos) {
-					realizarRegistroApellidos = true;
 					notificarCambios = true;
 				}
 			} else {
 				if (usuario.datosActuales.nombres.length > 0) {
 					realizarRegistroNombres = true;
 				}
-				if (usuario.datosActuales.apellidos.length > 0) {
-					realizarRegistroApellidos = true;
-				}
 			}
-			if (realizarRegistroNombres === true || realizarRegistroApellidos === true) {
-				usuario.registrarHistorialNombres()
-					.then(() => {})
-					.catch(() => {})
-				;
+			if (realizarRegistroNombres === true) {
+				await usuario.registrarHistorialNombres(nombres);
 			}
 
 			if (usuario.historial.usuarios.length > 0) {
-				if (usuario.historial.usuarios[usuario.historial.usuarios.length - 1].usuario !== usuario.datosActuales.usuario) {
+				if (usuario.historial.usuarios[usuario.historial.usuarios.length - 1].usuario !== comprobacion.from.username) {
+					usuarioAnterior = usuario.historial.usuarios[usuario.historial.usuarios.length - 1].usuario;
 					realizarRegistroUsuario = true;
 					notificarCambios = true;
 				}
@@ -399,10 +421,7 @@ async function registrarCambios(contexto) {
 				}
 			}
 			if (realizarRegistroUsuario === true) {
-				usuario.registrarHistorialUsuario()
-					.then(() => {})
-					.catch(() => {})
-				;
+				await usuario.registrarHistorialUsuario(comprobacion.from.username);
 			}
 
 			if (comprobacion.chat !== undefined) {
@@ -415,40 +434,6 @@ async function registrarCambios(contexto) {
 				}
 			}
 
-			if (notificarCambios === true) {
-				mensaje = `<b>Notificación de cambio en la identidad</b>
-
-Se ha detectado un cambio en la identidad del usuario <a href="tg://user?id=${usuario.id}">${usuario.id}</a>.`;
-				
-				if (realizarRegistroUsuario === true) {
-					mensaje += `\n\n<b>Nombre de usuario</b>
-Actual: ${(usuario.datosActuales.usuario.length > 0 ? `@${usuario.datosActuales.usuario}` : '[No definido]')}
-Anterior: ${(usuario.historial.usuarios[usuario.historial.usuarios.length - 1].usuario.length > 0 ? `@${usuario.historial.usuarios[usuario.historial.usuarios.length - 1].usuario}` : '[No definido]')}`;
-				}
-
-				if (realizarRegistroNombres === true) {
-					mensaje += `\n\n<b>Nombres</b>
-Actual: ${(usuario.datosActuales.nombres.length > 0 ? `${usuario.datosActuales.nombres}` : '[No definido]')}
-Anterior: ${(usuario.historial.nombres[usuario.historial.nombres.length - 1].nombres.length > 0 ? `${usuario.historial.nombres[usuario.historial.nombres.length - 1].nombres}` : '[No definido]')}`;
-				}
-
-				if (realizarRegistroApellidos === true) {
-					mensaje += `\n\n<b>Apellidos</b>
-Actual: ${(usuario.datosActuales.apellidos.length > 0 ? `${usuario.datosActuales.apellidos}` : '[No definido]')}
-Anterior: ${(usuario.historial.nombres[usuario.historial.nombres.length - 1].apellidos.length > 0 ? `${usuario.historial.nombres[usuario.historial.nombres.length - 1].apellidos}` : '[No definido]')}`;
-				}
-
-				await usuario.obtenerListadoGrupos();
-				for (let i = 0; i < usuario.grupos.length; i++) {
-					const grupo = usuario.grupos[i];
-					setTimeout(() => {
-						contexto.telegram.sendMessage(grupo.id, mensaje, { parse_mode: 'HTML' })
-							.then(() => {})
-							.catch(() => {})
-						;
-					}, 1000 * i);
-				}
-			}
 		} catch (_e) {}
 	}
 }

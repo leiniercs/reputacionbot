@@ -166,4 +166,7 @@ CREATE FUNCTION estimar_tiempo_creacion(IN id_cuenta_telegram BIGINT) RETURNS TA
 	END;
 $$ LANGUAGE plpgsql;
 
+delete from monitorizacion_nombres a using monitorizacion_nombres b where a.tiempo > b.tiempo and a.nombres = b.nombres;
+delete from monitorizacion_usuarios a using monitorizacion_usuarios b where a.tiempo > b.tiempo and a.usuario = b.usuario;
+
 COMMIT;
